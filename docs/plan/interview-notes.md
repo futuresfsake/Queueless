@@ -1,6 +1,6 @@
 # Interview Notes (Dec 1–7)
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 Use this to defend the design. Every answer must be backed by something in the repo. Never state a number that is not in `validation-results.md`.
 
@@ -18,9 +18,14 @@ Use this to defend the design. Every answer must be backed by something in the r
 | Why no Redis at first? | Nothing in the MVP needed it; added with the SMS worker. ADR-005 |
 | How do you avoid lost SMS? | Outbox row in the same transaction; worker retries; honest note on the at-least-once window. sms-outbox-design.md |
 | What's wrong with your wait estimates? | Listed weaknesses; compared against a naive baseline; simulated only. wait-time-estimation.md |
+| How do you know it's correct? | Not a claim: an invariant auditor runs read-only SQL checks against the live DB and in CI after the load test; plus the k6 results. It checks internal consistency, not real-world behavior. invariant-auditor.md |
+| Why did you remove the IN_PROGRESS idempotency state? | The key is inserted inside the transaction, so it is invisible until commit; concurrent duplicates block on the unique index and replay. The state was unreachable. ADR-004, CHANGELOG |
+| Why don't clients consume an events-after-id stream? | Sequence ids are not commit-ordered, so a cursor can skip a late-committing row. We refetch snapshots. TRD §11 |
+| Why an advisory lock for priority lanes? | The starvation guard needs a global view, which independent `SKIP LOCKED` picks don't have; we serialize only the policy decision per service point. priority-lanes.md |
+| What makes it different from other queue capstones? | Executable integrity proof, PH priority lanes, SMS-first/Cebuano, measured self-calibrating ETA ranges |
 | What did you not validate? | Real clinic workflows and patient behavior. State it first. |
 | What would you do with a real pilot? | Measure actual wait vs. estimate, no-show rate, SMS delivery rate |
-| Privacy? | Name + optional phone only, consent logged, phone purged after 30 days |
+| Privacy? | Name + optional phone only, consent logged, name and phone cleared after 30 days |
 | What went wrong during the build? | Fill in honestly after building (e.g. RLS gotchas) |
 
 ## "Since I applied" list (fill with what really shipped)
