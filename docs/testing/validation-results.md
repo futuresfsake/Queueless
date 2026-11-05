@@ -10,6 +10,7 @@ Status: Template (results stay TBD until measured) · Last updated: 2026-11-05
 | No skipped/duplicate calls | 3 simultaneous call-next (k6) | TBD | — | — |
 | Idempotent retries | Replay same key | TBD | — | — |
 | Tenant isolation | Integration tests T-1..T-3 | TBD | — | — |
+| Integrity checks A-1..A-8 | Auditor after k6 / simulator / chaos | TBD | — | — |
 | Crash recovery (API restarted mid-run) | Manual / script | TBD | — | — |
 | Call-next latency (p95) | k6 | TBD | — | — |
 | TV update delay after click | Measured in browser | TBD | — | — |
