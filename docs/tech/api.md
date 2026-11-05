@@ -1,6 +1,6 @@
 # API Spec (planned)
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 The authoritative spec will be generated from NestJS (Swagger/OpenAPI at `/docs`) once built. This file is the plan; update it if endpoints change.
 
@@ -38,7 +38,7 @@ The authoritative spec will be generated from NestJS (Swagger/OpenAPI at `/docs`
 | POST | `/tickets/:id/cancel` | STAFF+ | US-7 |
 | POST | `/queue/:servicePointId/tickets` (walk-in by staff) | STAFF+ | US-5 |
 
-`call-next` responses: `200 { ticket }`, `409 QUEUE_EMPTY` (or `204`; decide in implementation and record here).
+`call-next` responses: `200 { ticket }`, or `409 QUEUE_EMPTY` (decision D-2, final).
 
 ## Public (patient / TV)
 | Method | Path | Notes | Story |
