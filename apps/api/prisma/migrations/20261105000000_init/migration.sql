@@ -13,9 +13,6 @@ CREATE TYPE "EventType" AS ENUM ('TICKET_ISSUED', 'CALLED', 'STARTED', 'SERVED',
 -- CreateEnum
 CREATE TYPE "ActorKind" AS ENUM ('STAFF', 'PATIENT', 'SYSTEM');
 
--- CreateEnum
-CREATE TYPE "IdempotencyStatus" AS ENUM ('IN_PROGRESS', 'COMPLETED');
-
 -- CreateTable
 CREATE TABLE "tenants" (
     "id" UUID NOT NULL,
@@ -48,6 +45,7 @@ CREATE TABLE "service_points" (
     "code" TEXT NOT NULL,
     "prefix" TEXT NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "max_waiting" INTEGER NOT NULL DEFAULT 200,
 
     CONSTRAINT "service_points_pkey" PRIMARY KEY ("id")
 );
@@ -84,7 +82,7 @@ CREATE TABLE "tickets" (
     "seq" INTEGER NOT NULL,
     "number" TEXT NOT NULL,
     "status" "TicketStatus" NOT NULL DEFAULT 'WAITING',
-    "patient_name" TEXT NOT NULL,
+    "patient_name" TEXT,
     "phone" TEXT,
     "access_token" TEXT NOT NULL,
     "issued_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -129,12 +127,23 @@ CREATE TABLE "idempotency_keys" (
     "key" TEXT NOT NULL,
     "endpoint" TEXT NOT NULL,
     "request_hash" TEXT NOT NULL,
-    "status" "IdempotencyStatus" NOT NULL DEFAULT 'IN_PROGRESS',
     "response_status" INTEGER,
     "response_body" JSONB,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "idempotency_keys_pkey" PRIMARY KEY ("tenant_id","key")
+);
+
+-- CreateTable
+CREATE TABLE "audit_runs" (
+    "id" UUID NOT NULL,
+    "tenant_id" UUID NOT NULL,
+    "ran_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "trigger" TEXT NOT NULL,
+    "passed" BOOLEAN NOT NULL,
+    "results" JSONB NOT NULL,
+
+    CONSTRAINT "audit_runs_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -172,6 +181,9 @@ CREATE UNIQUE INDEX "consents_ticket_id_key" ON "consents"("ticket_id");
 
 -- CreateIndex
 CREATE INDEX "idempotency_keys_created_at_idx" ON "idempotency_keys"("created_at");
+
+-- CreateIndex
+CREATE INDEX "audit_runs_tenant_id_ran_at_idx" ON "audit_runs"("tenant_id", "ran_at");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
