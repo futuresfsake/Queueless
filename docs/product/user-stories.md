@@ -1,6 +1,6 @@
 # User Stories
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 Each story has an ID. Tests and commits reference these IDs. Priority: **P0** = must ship Nov 14, **P1** = ship if time, **PM** = post-MVP.
 
