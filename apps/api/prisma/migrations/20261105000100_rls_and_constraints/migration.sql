@@ -31,6 +31,7 @@ ALTER TABLE "slots" ADD CONSTRAINT slots_capacity_chk CHECK ("capacity" > 0);
 ALTER TABLE "slots" ADD CONSTRAINT slots_booked_chk CHECK ("booked_count" >= 0 AND "booked_count" <= "capacity");
 
 ALTER TABLE "tickets" ADD CONSTRAINT tickets_seq_chk CHECK ("seq" > 0);
+ALTER TABLE "service_points" ADD CONSTRAINT service_points_max_waiting_chk CHECK ("max_waiting" > 0);
 
 -- ---------------------------------------------------------------------------
 -- 3. INV-6: queue_events is append-only
@@ -59,7 +60,7 @@ DECLARE t text;
 BEGIN
   FOREACH t IN ARRAY ARRAY[
     'service_points', 'slots', 'ticket_counters', 'tickets',
-    'queue_events', 'consents', 'idempotency_keys'
+    'queue_events', 'consents', 'idempotency_keys', 'audit_runs'
   ] LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
@@ -112,4 +113,6 @@ TO queueless_app;
 
 -- INV-6: no UPDATE/DELETE/TRUNCATE privilege on events at all (trigger is the second layer).
 GRANT SELECT, INSERT ON "queue_events" TO queueless_app;
+-- Audit runs are append-only by privilege: no UPDATE/DELETE.
+GRANT SELECT, INSERT ON "audit_runs" TO queueless_app;
 GRANT USAGE ON SEQUENCE "queue_events_id_seq" TO queueless_app;
