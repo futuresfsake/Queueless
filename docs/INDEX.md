@@ -48,3 +48,10 @@ Start here to find the right doc. All docs are **Draft** until reviewed; each ha
 | How does the simulator work? | [testing/simulator-spec.md](testing/simulator-spec.md) |
 | What chaos scenarios do we run? | [testing/chaos-test-plan.md](testing/chaos-test-plan.md) |
 | How do I defend this in interviews? | [plan/interview-notes.md](plan/interview-notes.md) |
+
+## Added in v1.1
+| Question | Doc |
+|---|---|
+| How do we prove integrity continuously? | [tech/invariant-auditor.md](tech/invariant-auditor.md) |
+| How do priority lanes work? | [tech/priority-lanes.md](tech/priority-lanes.md) |
+| What changed in the senior review? | [CHANGELOG.md](CHANGELOG.md) |
