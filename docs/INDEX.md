@@ -55,3 +55,8 @@ Start here to find the right doc. All docs are **Draft** until reviewed; each ha
 | How do we prove integrity continuously? | [tech/invariant-auditor.md](tech/invariant-auditor.md) |
 | How do priority lanes work? | [tech/priority-lanes.md](tech/priority-lanes.md) |
 | What changed in the senior review? | [CHANGELOG.md](CHANGELOG.md) |
+
+## Session logs
+| Question | Doc |
+|---|---|
+| What happened each work session and what is next? | [sessions/](sessions/) — latest: [2026-11-05](sessions/2026-11-05.md) |
