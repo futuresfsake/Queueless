@@ -1,6 +1,6 @@
 # Deployment & Runbook
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 ## Local
 ```
@@ -43,3 +43,10 @@ Services: `postgres` (16), `api` (NestJS), `web` (Vite). Migrations run as the o
 
 ## Backup & retention
 Managed Postgres daily snapshots (host-provided). Phone purge job daily. Idempotency keys cleaned daily.
+
+## Role provisioning (v1.1)
+The migration creates `queueless_app` (LOGIN, NOSUPERUSER, NOBYPASSRLS) but not its password. After the first migration on each environment:
+```sql
+ALTER ROLE queueless_app PASSWORD '<from secret store>';
+```
+On a managed Postgres confirm during the Nov 8 hello-world deploy that (a) the migration role can `CREATE ROLE`, and (b) `SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user` for the **app** connection returns false/false. If the host forbids `CREATE ROLE`, create the role by hand once with an owner-run script and keep the migration's `IF NOT EXISTS` guard. After every deploy run the auditor CLI (check A-6 verifies this posture).
