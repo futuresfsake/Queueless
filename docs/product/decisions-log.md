@@ -1,6 +1,6 @@
 # Decisions Log (Product Owner Confirmations)
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 Every previously open question is resolved here. These are the defaults the project builds against. Changing one requires a new ADR or a dated edit to this log. Anything marked **Gate** has a date by which it is re-checked against real information.
 
@@ -21,7 +21,7 @@ Every previously open question is resolved here. These are the defaults the proj
 | D-13 | shadcn/ui | Initialized at the start of M4 when the first real component is needed | No dead setup | implementation-plan.md |
 | D-14 | Idempotency | Client generates a UUID per user action and reuses it on retry; server keeps keys 24 h | Standard pattern | ADR-004 |
 | D-15 | Socket payloads | Sockets are **hints** (`servicePointId`, `version`); clients refetch the snapshot | Correct by construction; simple | TRD-HLD.md |
-| D-16 | Language | English UI/SMS in MVP; strings kept in one file so Filipino/Cebuano can be added post-MVP | Time | PRD |
+| D-16 | Language | English UI/SMS in MVP with all strings in one catalog (no hard-coded text). Post-MVP (US-34): add **Cebuano** and Filipino for the patient page and SMS templates; the product owner (a Cebu native) reviews all translations before release. Do not ship machine-only translations. | Cebu is the home context; patients on basic phones read their own language best | PRD, US-34 |
 | D-17 | Super Admin creation | Seeded by script only; no public sign-up | Security | seed script |
 | D-18 | Phone purge (INV-9) | Daily job via `@nestjs/schedule` (P1 in MVP; if cut, documented as a limitation) | Privacy promise | US-25 |
 | D-19 | Time source | **All code reads time through an injectable `Clock` service** from day one | Lets the simulator run a 4-hour day in ~2 minutes with a virtual clock; makes tests deterministic | conventions.md, simulator-spec.md |
@@ -33,3 +33,14 @@ Every previously open question is resolved here. These are the defaults the proj
 
 ## Confirmation
 All decisions above are treated as approved by the product owner as of 2026-11-05 unless edited in this file with a later date.
+
+## Added in v1.1 (2026-11-05, senior review)
+| ID | Question | Decision | Why | Affects |
+|---|---|---|---|---|
+| D-25 | Priority lanes | Post-MVP (US-35): lane = REGULAR/PRIORITY only, **category never stored**; priority-first with starvation guard; advisory lock serializes the policy decision when lanes are enabled | PH-specific, ethical data minimization, interesting concurrency trade-off | priority-lanes.md |
+| D-26 | Invariant auditor | **In MVP (P1)**: read-only SQL checks A-1..A-8, on demand + nightly + CI. Cut rule: CLI + CI only. | Turns "provable correctness" from a claim into something runnable | invariant-auditor.md |
+| D-27 | Retention | Clear **name and phone** after 30 days (was phone only) | Matches the data-minimization promise | INV-9, schema.md |
+| D-28 | Abuse protection | Queue cap `max_waiting` = 200 default, per-IP join cap 10/hour, login throttle 5 failures/15 min, guest token expires 24 h after final state | Public endpoints and login need basic protection even in MVP | security-privacy.md, US-36 |
+| D-29 | Cancelling a booked ticket | Releases slot capacity in the same transaction under the slot lock | Otherwise capacity leaks | schema.md, T-23 |
+| D-30 | Idempotency semantics | Only successful results stored; errors roll back; no IN_PROGRESS state | Reflects what the database can actually observe | ADR-004 |
+| D-31 | Estimate ranges | ±25 % (labeled assumption) until ≥ 50 scored tickets, then ± measured MAE | No invented precision | wait-time-estimation.md |
