@@ -18,6 +18,12 @@ Multi-tenant, real-time queue and appointment system for clinics and barangay he
 
 Post-MVP: two-way SMS (outbox), multi-stage visits, wait-time estimates, simulator.
 
+## What's different
+- **Executable integrity proof:** an invariant auditor (read-only SQL) runs on demand, nightly, and in CI after the load tests. See [invariant-auditor](docs/tech/invariant-auditor.md).
+- **Concurrency-safe by design, with tests:** `SKIP LOCKED` call-next, row-locked booking, idempotency keys in the same transaction.
+- **Privacy by design:** name + optional phone only, consent logged, personal data cleared after 30 days, never symptoms.
+- **Built for the Philippines (post-MVP):** SMS-first access, priority lanes for senior/PWD/pregnant patients, Cebuano patient pages.
+
 ## Architecture
 See [docs/tech/TRD-HLD.md](docs/tech/TRD-HLD.md) (diagram to be copied here).
 
@@ -33,6 +39,7 @@ _TBD — `docker compose up` once scaffolded._
 - [ADR-003 Row locking](docs/decisions/ADR-003-concurrency-locking.md)
 - [ADR-004 Idempotency keys](docs/decisions/ADR-004-idempotency-keys.md)
 - [ADR-005 No Redis in MVP](docs/decisions/ADR-005-no-redis-in-mvp.md)
+- [All product decisions (D-1..D-31)](docs/product/decisions-log.md) · [Docs changelog](docs/CHANGELOG.md)
 
 ## Validation
 | What | How | Result |
@@ -41,6 +48,7 @@ _TBD — `docker compose up` once scaffolded._
 | No skipped/duplicate calls | 3 simultaneous call-next | TBD |
 | Crash recovery | API restarted mid-run | TBD |
 | Latency | k6 | TBD |
+| Integrity checks (A-1..A-8) | Auditor after k6 run | TBD |
 | Wait-time estimates | Simulated patients | TBD |
 | Usability | 5 testers, 3 tasks | TBD |
 
@@ -50,7 +58,7 @@ Details: [docs/testing/validation-results.md](docs/testing/validation-results.md
 **In a pilot I would measure:** actual waits vs. estimates, no-show rate, SMS delivery rate.
 
 ## Privacy
-Collects only a name/nickname and optional phone number, with logged consent. Never symptoms or diagnoses. Phone numbers are deleted after 30 days. See [security-privacy](docs/tech/security-privacy.md).
+Collects only a name/nickname and optional phone number, with logged consent. Never symptoms or diagnoses. Name and phone are cleared after 30 days. See [security-privacy](docs/tech/security-privacy.md).
 
 ## Limitations
 - Single API instance (no Redis adapter yet)
