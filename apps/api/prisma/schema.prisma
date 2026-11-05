@@ -43,11 +43,6 @@ enum ActorKind {
   SYSTEM
 }
 
-enum IdempotencyStatus {
-  IN_PROGRESS
-  COMPLETED
-}
-
 model Tenant {
   id        String   @id @default(uuid()) @db.Uuid
   slug      String   @unique
@@ -80,8 +75,9 @@ model ServicePoint {
   tenantId String  @map("tenant_id") @db.Uuid
   name     String
   code     String
-  prefix   String
-  isActive Boolean @default(true) @map("is_active")
+  prefix     String
+  isActive   Boolean @default(true) @map("is_active")
+  maxWaiting Int     @default(200) @map("max_waiting")
 
   tenant   Tenant          @relation(fields: [tenantId], references: [id])
   slots    Slot[]
@@ -129,7 +125,7 @@ model Ticket {
   seq            Int
   number         String
   status         TicketStatus @default(WAITING)
-  patientName    String       @map("patient_name")
+  patientName    String?      @map("patient_name")
   phone          String?
   accessToken    String       @unique @map("access_token")
   issuedAt       DateTime     @default(now()) @map("issued_at") @db.Timestamptz
@@ -180,16 +176,27 @@ model Consent {
 }
 
 model IdempotencyKey {
-  tenantId       String            @map("tenant_id") @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
   key            String
   endpoint       String
-  requestHash    String            @map("request_hash")
-  status         IdempotencyStatus @default(IN_PROGRESS)
-  responseStatus Int?              @map("response_status")
-  responseBody   Json?             @map("response_body")
-  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  requestHash    String   @map("request_hash")
+  responseStatus Int?     @map("response_status")
+  responseBody   Json?    @map("response_body")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   @@id([tenantId, key])
   @@index([createdAt])
   @@map("idempotency_keys")
+}
+
+model AuditRun {
+  id       String   @id @default(uuid()) @db.Uuid
+  tenantId String   @map("tenant_id") @db.Uuid
+  ranAt    DateTime @default(now()) @map("ran_at") @db.Timestamptz
+  trigger  String
+  passed   Boolean
+  results  Json
+
+  @@index([tenantId, ranAt])
+  @@map("audit_runs")
 }
