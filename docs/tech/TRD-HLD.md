@@ -1,6 +1,6 @@
 # Technical Requirements & High-Level Design (TRD + HLD)
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 ## 1. Stack
 | Layer | Choice | Notes |
@@ -111,3 +111,12 @@ Local: `docker compose up` → postgres, api, web.
 
 ## 10. Risks
 See [risks-and-cuts](../plan/risks-and-cuts.md).
+
+## 11. Why sockets are hints and clients refetch (v1.1)
+A tempting design is "stream events after id N" using `queue_events.id`. It is **unsafe**: ids come from a sequence assigned at insert time, not at commit time. Transaction A can take id 10, transaction B id 11, B commits first, a client reads up to 11 and advances its cursor, then A commits id 10 — the client never sees it. We avoid the problem by design: the socket message only says "something changed" and the client **refetches the authoritative snapshot** (D-15). This is simple, always correct, and cheap at clinic scale. Do not "optimize" it into an id-cursor stream without a gap-safe scheme (e.g. waiting for in-flight transactions or using a commit-ordered LSN).
+
+## 12. Scale envelope (assumption, not measurement) (v1.1)
+Design target for the MVP: **1 API instance, ≤ 20 tenants, ≤ 10 concurrent staff per tenant, ≤ 500 tickets per service point per day.** These numbers are an assumption used to justify the architecture (single server, no Redis, snapshot refetch). Do not claim capacity beyond what k6 actually measured; record real results in validation-results.md. Known first bottlenecks: the per-service-point ticket counter row (serialized issuing), and hot-slot contention during booking bursts.
+
+## 13. Operational integrity checks (v1.1)
+The invariant auditor ([invariant-auditor.md](invariant-auditor.md)) runs on demand, nightly, and in CI. It is read-only SQL against the real database and is deliberately independent of the service code.
