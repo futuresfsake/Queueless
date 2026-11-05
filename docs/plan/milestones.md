@@ -1,6 +1,6 @@
 # Milestones
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 Deadline: **Nov 14, 2026** (submit). Interviews Dec 1–7. Today: Nov 5 → 9 days.
 Plan keeps **Nov 13 as buffer** and **Nov 14 for submission only**.
@@ -31,3 +31,17 @@ Plan keeps **Nov 13 as buffer** and **Nov 14 for submission only**.
 - A milestone is done only when its exit criteria are verified, not when code is written.
 - If a day slips, cut using [risks-and-cuts](risks-and-cuts.md); never cut M6 (the proof).
 - Update [STATUS](../STATUS.md) every session.
+
+## Interview window (Dec 1–7)
+No new features. Refresh README with real results only, re-run CI and k6, verify demo link and accounts, rehearse. See [interview-notes](interview-notes.md).
+
+## Post-MVP design docs
+| Milestone | Design doc |
+|---|---|
+| P1 SMS | [sms-outbox-design](../tech/sms-outbox-design.md) |
+| P2 Multi-stage | [multi-stage-visits](../tech/multi-stage-visits.md) |
+| P3 Estimates | [wait-time-estimation](../tech/wait-time-estimation.md) |
+| P4 Simulator | [simulator-spec](../testing/simulator-spec.md) |
+| P5 Chaos | [chaos-test-plan](../testing/chaos-test-plan.md) |
+
+Decision gates: hosting hello-world **Nov 8** (D-4); SMS gateway inbound check **Nov 15** (D-20); feature freeze **Nov 13** (D-24).
