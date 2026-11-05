@@ -26,7 +26,8 @@ Start here to find the right doc. All docs are **Draft** until reviewed; each ha
 
 ## ID schemes
 - Stories: `US-n` ([user-stories](product/user-stories.md))
-- Invariants: `INV-n` ([schema](tech/schema.md))
+- Invariants: `INV-n` ([schema](tech/schema.md); INV-10 in [multi-stage-visits](tech/multi-stage-visits.md))
+- Decisions: `D-n` ([decisions-log](product/decisions-log.md))
 - Tests: `T-n` ([test-plan](testing/test-plan.md))
 - Risks: `R-n` ([risks-and-cuts](plan/risks-and-cuts.md))
 - NFRs: `NFR-n` ([PRD](product/PRD.md))
@@ -36,3 +37,14 @@ Start here to find the right doc. All docs are **Draft** until reviewed; each ha
 - Diagrams are Mermaid inside Markdown.
 - When code and a doc disagree, update the doc in the same change.
 - Never put unmeasured numbers in docs; use `TBD`.
+
+## Decisions, post-MVP specs, and interview prep
+| Question | Doc |
+|---|---|
+| What was decided on every open question? | [product/decisions-log.md](product/decisions-log.md) (D-1..D-24) |
+| How do SMS and the outbox work? | [tech/sms-outbox-design.md](tech/sms-outbox-design.md) |
+| How do multi-stage visits work? | [tech/multi-stage-visits.md](tech/multi-stage-visits.md) |
+| How are wait times estimated and scored? | [tech/wait-time-estimation.md](tech/wait-time-estimation.md) |
+| How does the simulator work? | [testing/simulator-spec.md](testing/simulator-spec.md) |
+| What chaos scenarios do we run? | [testing/chaos-test-plan.md](testing/chaos-test-plan.md) |
+| How do I defend this in interviews? | [plan/interview-notes.md](plan/interview-notes.md) |
