@@ -1,6 +1,6 @@
 # Technical Requirements & High-Level Design (TRD + HLD)
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 ## 1. Stack
 | Layer | Choice | Notes |
