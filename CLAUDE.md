@@ -40,7 +40,16 @@ Non-goals: medical records, diagnoses, payments, native mobile apps.
 - Prioritize what ships by Nov 14; cut everything else.
 
 ## Commands
-_TBD — filled in when the project is scaffolded (install, dev, test, lint, `docker compose up`)._
+Package manager: pnpm (workspace). Windows: write files without a BOM (use the Write tool; PowerShell `Set-Content -Encoding utf8` adds a BOM that breaks Jest).
+
+```
+pnpm install
+pnpm --filter @queueless/shared build   # required before api lint/build
+pnpm lint | pnpm test | pnpm build       # whole workspace
+pnpm --filter @queueless/api dev         # API on :3000 (prefix /api/v1)
+pnpm --filter @queueless/web dev         # web on :5173 (proxies /api)
+docker compose up -d postgres            # Postgres 16 on :5432
+```
 
 ## Docs
 See `docs/INDEX.md`. Keep `docs/STATUS.md` updated at the end of each work session.
