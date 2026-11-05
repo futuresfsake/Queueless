@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones](milestones.md).
 
