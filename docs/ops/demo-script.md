@@ -1,6 +1,6 @@
 # Demo Script (2–3 minutes)
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 Layout: split screen — staff screen (left), TV (top right), phone/patient page (bottom right). Use the seeded demo tenant. Say only what is true and measured.
 
@@ -13,9 +13,10 @@ Layout: split screen — staff screen (left), TV (top right), phone/patient page
 | 1:00 | Double-click **Call next** fast | "Idempotency key: second click doesn't skip anyone." |
 | 1:15 | Two staff windows call next together | "SKIP LOCKED: two staff, two different patients." |
 | 1:35 | Show k6 result: 200 bookings, 1 slot → 1 success | Read the **actual recorded numbers**. |
+| 1:50 | Open the Integrity panel | "Eight checks run against the live database: unique numbers, state replay, slot counts, RLS posture. All green." |
 | 1:55 | Kill the API container on camera | "State lives in Postgres, not memory." |
 | 2:05 | Restart; screens reconnect and refetch | "Queue is intact." |
-| 2:25 | Show event log / README validation table | "Everything here is measured; real clinic validation is a next step." |
+| 2:25 | Re-run the Integrity panel after recovery, then show README validation table | "Still green after the crash. Everything here is measured; real clinic validation is a next step." |
 | 2:40 | Close | Link to repo and live demo. |
 
 ## Prep checklist
