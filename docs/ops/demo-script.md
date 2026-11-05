@@ -1,6 +1,6 @@
 # Demo Script (2–3 minutes)
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 Layout: split screen — staff screen (left), TV (top right), phone/patient page (bottom right). Use the seeded demo tenant. Say only what is true and measured.
 
