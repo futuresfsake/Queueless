@@ -1,6 +1,6 @@
 # Wait-Time Estimation (post-MVP)
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 Story: US-30. Window: Nov 22–24. Decision D-21.
 
@@ -18,7 +18,9 @@ Estimated wait for a ticket with `ahead` people before it:
 active_staff = max(1, distinct called_by in last 30 minutes at this service point)
 estimate_min = round(ahead * wma / active_staff)
 ```
-Shown to patients as a range (e.g. `~30–40 min`: estimate ± 15 %), never as a promise.
+Shown to patients as a **range**, never as a promise:
+- Until the tenant has **≥ 50 scored tickets**: estimate ± 25 % — an *assumption*, labeled as such.
+- After that: estimate ± the tenant's **measured MAE** for that service point (self-calibrating). A clinic whose estimates are bad gets honestly wide ranges.
 
 ## 2. Recording for accuracy
 When a ticket is issued, store in the `TICKET_ISSUED` event payload: `{ estimateMin, wma, ahead, activeStaff, source: "default"|"measured" }`.
@@ -44,3 +46,6 @@ Report MAE in minutes with **n** and the data origin: `SIMULATED` or `REAL`. Als
 
 ## 6. Tests
 Known-input WMA values; fallback under 3 samples; staff-count edge cases; MAE calculation; payload stored on issue.
+
+## 7. Accuracy panel (v1.1)
+Admin page "Estimate accuracy": MAE, baseline MAE, n, and a predicted-vs-actual scatter/binned chart per service point, labeled **REAL** or **SIMULATED** (tenant flag). If the estimator is worse than the baseline the panel says so. Endpoint: `GET /admin/accuracy`.
