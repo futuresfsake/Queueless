@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones](milestones.md).
 
@@ -43,7 +43,7 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [ ] Public endpoints and rate limiting
 - [ ] Join queue page, My ticket page (live), cancel
 - [ ] TV page
-- [ ] Slots CRUD + booking with `FOR UPDATE`
+- [ ] Slots CRUD + booking with `FOR UPDATE`; cancellation releases the slot (D-29, T-23)
 - [ ] Seed script (demo tenant, accounts, service points, slots)
 - [ ] Phone purge job (`@nestjs/schedule`) — P1
 
@@ -53,6 +53,8 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [ ] k6: call-next latency p95 (record real numbers only)
 - [ ] CI runs Jest + Testcontainers; k6 runs in CI against compose stack
 - [ ] Projection rebuild test (replay events == tickets.status)
+- [ ] Invariant auditor: `AuditService` (A-1..A-8), `audit_runs`, `/admin/audit`, CLI `pnpm --filter api audit`, CI step after k6 (US-33, T-21) — cut rule: CLI + CI only
+- [ ] Abuse protection: `max_waiting`, per-IP join cap, login throttle, guest-token expiry (US-36, T-24..T-26)
 - [ ] Fill README validation table with real results
 
 ## M7 Deploy + README (Nov 12)
