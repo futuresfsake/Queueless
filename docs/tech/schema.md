@@ -1,6 +1,6 @@
 # Database Schema
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 PostgreSQL 16. Prisma defines the tables; RLS, triggers, and extra constraints are hand-written SQL in migrations.
 
