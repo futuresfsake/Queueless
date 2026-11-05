@@ -1,6 +1,6 @@
 # Database Schema
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 PostgreSQL 16. Prisma defines the tables; RLS, triggers, and extra constraints are hand-written SQL in migrations.
 
@@ -50,6 +50,7 @@ CHECK: `(role = 'SUPER_ADMIN') = (tenant_id IS NULL)`.
 | name | text NOT NULL | |
 | code | text NOT NULL | URL-safe; UNIQUE(tenant_id, code) |
 | prefix | text NOT NULL | ticket prefix, e.g. `A`; UNIQUE(tenant_id, prefix) |
+| max_waiting | int NOT NULL default 200 | CHECK > 0; join returns `QUEUE_FULL` beyond this |
 | is_active | boolean default true | |
 
 ### slots
@@ -83,8 +84,8 @@ Issue number: `INSERT ... ON CONFLICT (service_point_id, queue_date) DO UPDATE S
 | seq | int NOT NULL | |
 | number | text NOT NULL | `prefix-seq` e.g. `A-023` |
 | status | enum `WAITING, CALLED, SERVING, SERVED, SKIPPED, NO_SHOW, CANCELLED` | |
-| patient_name | text NOT NULL | name or nickname |
-| phone | text NULL | purged after 30 days |
+| patient_name | text NULL | name or nickname; set to NULL after 30 days (INV-9) |
+| phone | text NULL | set to NULL after 30 days (INV-9) |
 | access_token | text UNIQUE NOT NULL | random ≥128-bit, for guest link |
 | issued_at | timestamptz | |
 | called_at / started_at / completed_at | timestamptz NULL | |
@@ -126,13 +127,27 @@ Consent rows are kept after phone purge (no phone in this table).
 | key | text | PK part |
 | endpoint | text | e.g. `POST /queue/:id/call-next` |
 | request_hash | text | detects key reuse with different body |
-| status | enum `IN_PROGRESS, COMPLETED` | |
-| response_status | int NULL | |
+| response_status | int NULL | set before commit; every committed row has a response (ADR-004) |
 | response_body | jsonb NULL | |
 | created_at | timestamptz | purge after 24h |
 
+### audit_runs (append-only)
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| tenant_id | uuid NOT NULL | RLS like other tenant tables |
+| ran_at | timestamptz default now() | |
+| trigger | text | `manual`, `nightly`, `ci` |
+| passed | boolean | all checks passed |
+| results | jsonb | per-check results (see invariant-auditor.md) |
+
+App role has INSERT, SELECT only.
+
+### Booking and cancellation
+Cancelling a ticket that holds a slot (`slot_id IS NOT NULL`) decrements `slots.booked_count` in the same transaction, after taking the slot's `FOR UPDATE` lock (decision D-29). Auditor check A-4 compares `booked_count` to the number of non-cancelled tickets holding the slot.
+
 ## 3. Post-MVP tables (not built yet)
-`visit_flows`, `visit_flow_stages`, `outbox_messages`, `sms_inbound`. Designed when SMS/multi-stage start.
+`visits`, `visit_flows`, `visit_flow_stages` (see multi-stage-visits.md), `outbox_messages`, `sms_inbound` (see sms-outbox-design.md), and `tickets.lane` / service point lane settings (see priority-lanes.md).
 
 ## 4. Row-Level Security
 Roles:
@@ -205,7 +220,7 @@ Every UPDATE of status includes the expected current status: `WHERE id=$1 AND st
 | INV-6 | `queue_events` is append-only | Role grants + trigger |
 | INV-7 | No cross-tenant access | RLS (forced) + non-owner role + app checks |
 | INV-8 | Every status change has exactly one event in the same transaction | Single service method; integration test counts events |
-| INV-9 | Phone numbers deleted after 30 days | Scheduled purge job |
+| INV-9 | Patient name and phone cleared (set NULL) 30 days after issue | Scheduled purge job + auditor A-7 |
 
 ## 7. Indexes
 - `tickets (service_point_id, queue_date, status, seq)`
@@ -215,6 +230,6 @@ Every UPDATE of status includes the expected current status: `WHERE id=$1 AND st
 - `idempotency_keys (created_at)` for purge
 
 ## 8. Retention
-- `tickets.phone` set to NULL 30 days after `issued_at` (INV-9).
+- `tickets.patient_name` and `tickets.phone` set to NULL 30 days after `issued_at` (INV-9). The ticket row, number, timestamps, and events stay (they contain no personal data) so analytics and the audit trail survive.
 - `idempotency_keys` deleted after 24 hours.
 - Events keep ticket number only, no name or phone.
