@@ -1,6 +1,6 @@
 # Test Plan
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 ## Principles
 - Test against a **real Postgres** (Testcontainers) connected as the **non-owner app role**, so RLS is actually exercised.
