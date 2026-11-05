@@ -57,3 +57,5 @@ See `docs/INDEX.md`. Keep `docs/STATUS.md` updated at the end of each work sessi
 Before coding a task, read: the story in `docs/product/user-stories.md`, the relevant part of `docs/tech/schema.md` (invariants `INV-n`), `docs/tech/state-machine.md`, and the task in `docs/plan/implementation-plan.md`. Conventions: `docs/conventions.md`. Tests cite story/invariant IDs.
 
 Decisions already made (do not re-litigate without a new ADR): ADR-001 RLS tenancy, ADR-002 event log, ADR-003 row locking (`SKIP LOCKED`), ADR-004 idempotency keys in Postgres, ADR-005 no Redis in MVP.
+
+All previously open questions are resolved in `docs/product/decisions-log.md` (D-1..D-24). Read it before asking the product owner anything. Post-MVP specs: `docs/tech/sms-outbox-design.md`, `multi-stage-visits.md`, `wait-time-estimation.md`, `docs/testing/simulator-spec.md`, `chaos-test-plan.md`. All business-logic time goes through the injectable `Clock` (D-19).
