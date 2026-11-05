@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 ## 1. Problem
 Patients in Philippine clinics and barangay health centers stand in line for hours with no idea when they will be served. Staff track queues on paper or shouting. Many patients have only basic phones and weak signal.
