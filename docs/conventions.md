@@ -1,6 +1,6 @@
 # Conventions
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 ## Repo layout (target)
 ```
@@ -48,3 +48,6 @@ Package manager: pnpm workspaces.
 ## Docs
 - Update docs in the same change as the code. Update `docs/STATUS.md` at the end of each session.
 - Each doc has a status and date at the top.
+
+## Time (decision D-19)
+Never call `Date.now()`, `new Date()` or SQL `now()` directly in business logic. Use the injected `Clock` service (application code) and pass timestamps into SQL where behavior depends on them. This lets tests and the simulator use a virtual clock. DB defaults like `created_at DEFAULT now()` are allowed for pure audit columns.
