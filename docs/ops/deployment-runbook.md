@@ -1,6 +1,6 @@
 # Deployment & Runbook
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 ## Local
 ```
@@ -23,7 +23,7 @@ Services: `postgres` (16), `api` (NestJS), `web` (Vite). Migrations run as the o
 `lint → typecheck → test → build → (deploy on main)`. Required check before merge.
 
 ## Production (target)
-- API + Postgres: Railway or Render. Web: Vercel.
+- API + Postgres: Railway (decision D-4; fallback Render, gate Nov 8). Web: Vercel.
 - Deploy order: run migrations (owner role) → deploy API → deploy web.
 - Ensure WebSocket support is enabled on the API host and CORS includes the web origin.
 - After deploy: run `/health`, log in with demo account, issue a ticket, call next.
