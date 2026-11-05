@@ -1,6 +1,6 @@
 # API Spec (planned)
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 The authoritative spec will be generated from NestJS (Swagger/OpenAPI at `/docs`) once built. This file is the plan; update it if endpoints change.
 
@@ -8,7 +8,7 @@ The authoritative spec will be generated from NestJS (Swagger/OpenAPI at `/docs`
 - Base path `/api/v1`. JSON.
 - Auth: `Authorization: Bearer <JWT>` for staff/admin. Public endpoints need none.
 - Queue-changing endpoints require `Idempotency-Key: <uuid>`; missing → `400 IDEMPOTENCY_KEY_REQUIRED`.
-- Same key + different body → `422 IDEMPOTENCY_KEY_REUSED`. Same key while first request in progress → `409 REQUEST_IN_PROGRESS`.
+- Same key + different body → `422 IDEMPOTENCY_KEY_REUSED`. Concurrent duplicates wait, then replay the first response (no error state; see ADR-004). Only successful results are stored; business errors roll back so a retry re-evaluates.
 - Error shape: `{ "error": { "code", "message", "details" } }`.
 
 ## Auth
@@ -67,4 +67,15 @@ Rate limiting on all `/public` POSTs.
 Join: `join.servicePoint` (JWT or public display id), `join.ticket` (token).
 
 ## Error codes
-`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `CONSENT_REQUIRED`, `QUEUE_EMPTY`, `INVALID_TRANSITION`, `SLOT_FULL`, `SERVICE_POINT_INACTIVE`, `IDEMPOTENCY_KEY_REQUIRED`, `IDEMPOTENCY_KEY_REUSED`, `REQUEST_IN_PROGRESS`, `RATE_LIMITED`.
+`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `CONSENT_REQUIRED`, `QUEUE_EMPTY`, `INVALID_TRANSITION`, `SLOT_FULL`, `SERVICE_POINT_INACTIVE`, `IDEMPOTENCY_KEY_REQUIRED`, `IDEMPOTENCY_KEY_REUSED`, `RATE_LIMITED`, `QUEUE_FULL`, `TOO_MANY_ATTEMPTS`.
+
+## Additions (v1.1)
+| Method | Path | Role | Story |
+|---|---|---|---|
+| GET | `/admin/audit` | CLINIC_ADMIN (own tenant) | US-33 — runs the invariant auditor, returns per-check results |
+| GET | `/admin/audit/runs` | CLINIC_ADMIN | US-33 — stored runs |
+| GET | `/admin/accuracy` | CLINIC_ADMIN | US-30 — estimate accuracy panel (post-MVP) |
+
+Guest token validity: a ticket token works until 24 h after the ticket reaches a final state; after that `/public/t/:token` returns `404 NOT_FOUND`.
+`POST /public/.../tickets` returns `409 QUEUE_FULL` when the service point has `max_waiting` WAITING tickets.
+`POST /auth/login` returns `429 TOO_MANY_ATTEMPTS` after repeated failures (see security-privacy.md); failed logins always return the same generic `UNAUTHORIZED`.
