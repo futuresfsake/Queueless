@@ -1,6 +1,6 @@
 # User Stories
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 Each story has an ID. Tests and commits reference these IDs. Priority: **P0** = must ship Nov 14, **P1** = ship if time, **PM** = post-MVP.
 
@@ -25,7 +25,7 @@ Each story has an ID. Tests and commits reference these IDs. Priority: **P0** = 
 - AC: page opened via unguessable token link; updates without refresh; shows people ahead (count, not time estimate in MVP).
 
 **US-7 (P0)** As a patient, I cancel my ticket while it is WAITING or CALLED.
-- AC: becomes CANCELLED; event logged; cannot cancel after SERVING.
+- AC: becomes CANCELLED; event logged; cannot cancel after SERVING; if the ticket held a slot, the slot capacity is released (D-29).
 
 **US-8 (P0)** As a patient, I book an appointment slot.
 - AC: slot shows remaining capacity; booking decrements atomically; full slot rejects with `SLOT_FULL`.
@@ -64,7 +64,11 @@ Each story has an ID. Tests and commits reference these IDs. Priority: **P0** = 
 
 **US-23 (P0)** A seed script creates a demo tenant, accounts, service points, and slots.
 
-**US-25 (P1)** Phone numbers older than 30 days are purged by a scheduled job. (INV-9)
+**US-25 (P1)** Patient names and phone numbers older than 30 days are cleared by a scheduled job. (INV-9)
+
+**US-33 (P1)** As a Clinic Admin, I see an Integrity panel that runs the invariant checks (A-1..A-8) and shows pass/fail; the same checks run nightly and in CI. See invariant-auditor.md.
+
+**US-36 (P0)** Abuse protection: queue cap per service point, per-IP join cap, login throttling, and guest-token expiry. See security-privacy.md.
 
 ## Post-MVP
 **US-24 (PM)** "Simulate busy morning" demo button runs the simulator and reports results labeled as simulated.
@@ -75,6 +79,8 @@ Each story has an ID. Tests and commits reference these IDs. Priority: **P0** = 
 **US-30 (PM)** Wait-time estimate from weighted moving average; accuracy reported as average error in minutes.
 **US-31 (PM)** Chaos tests: API/Redis restart and 2s lag keep state consistent.
 **US-32 (PM)** 5-person usability test report.
+**US-34 (PM)** Patient-facing pages and SMS templates available in Cebuano (and Filipino) in addition to English; translations reviewed by a native speaker (the product owner) before release. (D-16)
+**US-35 (PM)** Priority lanes for senior citizens / PWD / pregnant patients with a starvation guard; category never stored. See priority-lanes.md.
 
 ## Traceability (fill as built)
 | Story | Endpoint(s) | Test | Status |
@@ -84,3 +90,5 @@ Each story has an ID. Tests and commits reference these IDs. Priority: **P0** = 
 | US-9..US-14 | `/staff/*` | TBD | Not started |
 | US-16 | `/public/display/:id` | TBD | Not started |
 | US-17..US-21 | n/a | k6 + Jest | Not started |
+| US-33 | `/admin/audit` | T-21 | Not started |
+| US-36 | `/public/*`, `/auth/login` | T-24..T-26 | Not started |
