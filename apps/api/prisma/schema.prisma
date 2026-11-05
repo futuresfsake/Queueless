@@ -1,0 +1,195 @@
+// Source of truth for table shapes. RLS, roles, CHECK constraints, triggers and
+// grants are hand-written SQL in prisma/migrations/*_rls_and_constraints (see docs/tech/schema.md).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  CLINIC_ADMIN
+  STAFF
+}
+
+enum TicketStatus {
+  WAITING
+  CALLED
+  SERVING
+  SERVED
+  SKIPPED
+  NO_SHOW
+  CANCELLED
+}
+
+enum EventType {
+  TICKET_ISSUED
+  CALLED
+  STARTED
+  SERVED
+  SKIPPED
+  NO_SHOW
+  CANCELLED
+  TRANSFERRED
+}
+
+enum ActorKind {
+  STAFF
+  PATIENT
+  SYSTEM
+}
+
+enum IdempotencyStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  users         User[]
+  servicePoints ServicePoint[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String?  @map("tenant_id") @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@map("users")
+}
+
+model ServicePoint {
+  id       String  @id @default(uuid()) @db.Uuid
+  tenantId String  @map("tenant_id") @db.Uuid
+  name     String
+  code     String
+  prefix   String
+  isActive Boolean @default(true) @map("is_active")
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id])
+  slots    Slot[]
+  tickets  Ticket[]
+  counters TicketCounter[]
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, prefix])
+  @@map("service_points")
+}
+
+model Slot {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  servicePointId String   @map("service_point_id") @db.Uuid
+  startsAt       DateTime @map("starts_at") @db.Timestamptz
+  capacity       Int
+  bookedCount    Int      @default(0) @map("booked_count")
+
+  servicePoint ServicePoint @relation(fields: [servicePointId], references: [id])
+  tickets      Ticket[]
+
+  @@index([servicePointId, startsAt])
+  @@map("slots")
+}
+
+model TicketCounter {
+  servicePointId String   @map("service_point_id") @db.Uuid
+  queueDate      DateTime @map("queue_date") @db.Date
+  tenantId       String   @map("tenant_id") @db.Uuid
+  lastSeq        Int      @default(0) @map("last_seq")
+
+  servicePoint ServicePoint @relation(fields: [servicePointId], references: [id])
+
+  @@id([servicePointId, queueDate])
+  @@map("ticket_counters")
+}
+
+model Ticket {
+  id             String       @id @default(uuid()) @db.Uuid
+  tenantId       String       @map("tenant_id") @db.Uuid
+  servicePointId String       @map("service_point_id") @db.Uuid
+  slotId         String?      @map("slot_id") @db.Uuid
+  queueDate      DateTime     @map("queue_date") @db.Date
+  seq            Int
+  number         String
+  status         TicketStatus @default(WAITING)
+  patientName    String       @map("patient_name")
+  phone          String?
+  accessToken    String       @unique @map("access_token")
+  issuedAt       DateTime     @default(now()) @map("issued_at") @db.Timestamptz
+  calledAt       DateTime?    @map("called_at") @db.Timestamptz
+  startedAt      DateTime?    @map("started_at") @db.Timestamptz
+  completedAt    DateTime?    @map("completed_at") @db.Timestamptz
+  calledBy       String?      @map("called_by") @db.Uuid
+  version        Int          @default(0)
+
+  servicePoint ServicePoint @relation(fields: [servicePointId], references: [id])
+  slot         Slot?        @relation(fields: [slotId], references: [id])
+  events       QueueEvent[]
+  consent      Consent?
+
+  @@unique([servicePointId, queueDate, seq])
+  @@index([servicePointId, queueDate, status, seq])
+  @@map("tickets")
+}
+
+model QueueEvent {
+  id             BigInt    @id @default(autoincrement())
+  tenantId       String    @map("tenant_id") @db.Uuid
+  servicePointId String    @map("service_point_id") @db.Uuid
+  ticketId       String    @map("ticket_id") @db.Uuid
+  type           EventType
+  actorUserId    String?   @map("actor_user_id") @db.Uuid
+  actorKind      ActorKind @map("actor_kind")
+  payload        Json      @default("{}")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId, id])
+  @@index([servicePointId, id])
+  @@map("queue_events")
+}
+
+model Consent {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  ticketId    String   @unique @map("ticket_id") @db.Uuid
+  textVersion String   @map("text_version")
+  acceptedAt  DateTime @default(now()) @map("accepted_at") @db.Timestamptz
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@map("consents")
+}
+
+model IdempotencyKey {
+  tenantId       String            @map("tenant_id") @db.Uuid
+  key            String
+  endpoint       String
+  requestHash    String            @map("request_hash")
+  status         IdempotencyStatus @default(IN_PROGRESS)
+  responseStatus Int?              @map("response_status")
+  responseBody   Json?             @map("response_body")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@id([tenantId, key])
+  @@index([createdAt])
+  @@map("idempotency_keys")
+}
