@@ -5,31 +5,28 @@ Last updated: 2026-11-05
 Update this at the end of every work session.
 
 ## Current milestone
-M0 Documentation — complete (pending review). Next: M1 Scaffold (Nov 6).
+M1 Scaffold — **done** (CI green on `6d01092`). Next: M2 Data & Auth.
 
 ## Done
-- Repo cloned; `main` pushed to GitHub
-- `CLAUDE.md`, `README.md`, `.gitattributes`, PR template
-- Docs: INDEX, glossary, conventions, PRD, user stories, app flow, TRD-HLD, schema, state machine, API plan, security/privacy, milestones, implementation plan, risks and cuts, ADR-001..005, test plan, validation results, deployment runbook, demo script
+- M0 docs (see [INDEX](INDEX.md))
+- M1: pnpm workspace; `packages/shared` (Zod); `apps/api` (NestJS, `GET /api/v1/health`, 1 Jest test); `apps/web` (React + Vite + Tailwind v4, TanStack Query, shows API health); `docker-compose.yml` (Postgres 16); GitHub Actions CI (lint, test, build) passing
 
 ## In progress
 - Nothing
 
-## Next (M1 Scaffold, Nov 6)
-1. pnpm workspace: `apps/api`, `apps/web`, `packages/shared`
-2. `docker-compose.yml` with Postgres 16, `.env.example`
-3. NestJS `/health`, Vite app boots
-4. Lint/format config, GitHub Actions skeleton
-5. Fill "Commands" in `CLAUDE.md`
+## Next (M2 Data & Auth, Nov 7)
+1. Prisma schema from [schema.md](tech/schema.md); migration SQL for roles, RLS, CHECKs, append-only trigger
+2. `TenantPrisma.run()`; auth (JWT, RolesGuard); tenant/user/service-point CRUD
+3. Testcontainers setup; RLS isolation tests T-1..T-3
 
 ## Blockers
-- None
+- **Docker daemon is not running** on this machine (CLI present, Docker Desktop not started). Needed for `docker compose up` and Testcontainers. A local PostgreSQL 17 service is running, but its superuser password is unknown to the assistant.
+- shadcn/ui not initialized yet (add when the first UI components are needed).
 
 ## Open decisions
-- Redis for MVP: decided **no** (ADR-005). Confirm with Chelsea.
-- `call-next` on empty queue: `409 QUEUE_EMPTY` vs `204` — decide at implementation, record in api.md.
-- Is SKIPPED final or recallable? Final for MVP.
-- Package manager: pnpm assumed.
+- Redis for MVP: decided **no** (ADR-005).
+- `call-next` on empty queue: `409 QUEUE_EMPTY` vs `204` — decide at implementation.
+- SKIPPED final for MVP.
 - Hosting: Railway vs Render — decide by Nov 8 (deploy hello-world early, R4).
 
 ## Days left to Nov 14
