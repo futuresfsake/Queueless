@@ -87,7 +87,8 @@ Emit happens after commit so clients never see state that was rolled back. If th
 ## 7. Multi-tenant access for unauthenticated users
 Patient/TV endpoints have no JWT. Tenant is resolved from `tenantSlug` or ticket token by a lookup that does not require tenant context:
 - `tenants` is readable by slug without RLS filtering by `app.tenant_id` (only `id`, `slug`, `name` exposed).
-- Ticket token lookup uses a `SECURITY DEFINER` function `resolve_ticket_token(token)` returning `(tenant_id, ticket_id)`; the app then runs normal RLS-scoped queries.
+- Ticket token lookup uses a narrow RLS policy `ticket_token_lookup` (SELECT only, `access_token = current_setting('app.ticket_token')`). The app sets `app.ticket_token` transaction-locally, reads that one ticket, learns `tenant_id`, then continues in a normal tenant-scoped transaction. (Chosen over a `SECURITY DEFINER` function: with `FORCE ROW LEVEL SECURITY` the function owner is still filtered, and a policy keeps everything inside RLS.)
+- Login uses the same pattern: policy `users_login_lookup` (SELECT only, `email = current_setting('app.login_email')`), so the app can find one user by email before any tenant is known.
 
 ## 8. Non-functional design
 | NFR | Design |
