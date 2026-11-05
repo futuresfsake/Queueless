@@ -29,7 +29,7 @@ Non-goals: medical records, diagnoses, payments, native mobile apps.
 3. **Event log is the source of truth.** `queue_events` is append-only; current queue state is a rebuildable projection.
 4. **Every staff action that changes the queue needs an idempotency key.** A double-tap must never skip a patient.
 5. **Row locking** (`SELECT … FOR UPDATE`) for slot booking and "Call next".
-6. **Privacy (Data Privacy Act 2012):** collect only a name/nickname and phone number. Never symptoms or diagnoses. Log consent. Phone numbers are deleted after 30 days.
+6. **Privacy (Data Privacy Act 2012):** collect only a name/nickname and phone number. Never symptoms, diagnoses, or priority reasons. Log consent. Name and phone are cleared after 30 days.
 7. **Docs and code stay in sync.** If code and a doc disagree, update the doc in the same change.
 
 ## How to work with Chelsea
@@ -59,3 +59,5 @@ Before coding a task, read: the story in `docs/product/user-stories.md`, the rel
 Decisions already made (do not re-litigate without a new ADR): ADR-001 RLS tenancy, ADR-002 event log, ADR-003 row locking (`SKIP LOCKED`), ADR-004 idempotency keys in Postgres, ADR-005 no Redis in MVP.
 
 All previously open questions are resolved in `docs/product/decisions-log.md` (D-1..D-24). Read it before asking the product owner anything. Post-MVP specs: `docs/tech/sms-outbox-design.md`, `multi-stage-visits.md`, `wait-time-estimation.md`, `docs/testing/simulator-spec.md`, `chaos-test-plan.md`. All business-logic time goes through the injectable `Clock` (D-19).
+
+v1.1 additions: invariant auditor (`docs/tech/invariant-auditor.md`, D-26), priority lanes (`docs/tech/priority-lanes.md`, post-MVP), decisions D-25..D-31. Idempotency has no IN_PROGRESS state (ADR-004 revised). Never use an events-after-id cursor for realtime (TRD §11). See `docs/CHANGELOG.md`.
