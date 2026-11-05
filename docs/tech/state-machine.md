@@ -1,6 +1,6 @@
 # Ticket State Machine
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 ## Diagram
 ```mermaid
@@ -37,8 +37,8 @@ Any other transition returns `409 INVALID_TRANSITION` and writes no event.
 
 ## Post-MVP
 - `SERVING → TRANSFERRED`: closes the current stage ticket and issues a new ticket at the next stage (multi-stage visits). `TRANSFERRED` becomes a final state for the old ticket.
-- Auto no-show: a CALLED ticket not started within N minutes becomes NO_SHOW (job).
-- Recall: allow SKIPPED → WAITING (decision pending).
+- Auto no-show: a CALLED ticket not started within 10 min (per-tenant config) becomes NO_SHOW via a job (decision D-12). See [multi-stage-visits](multi-stage-visits.md) for TRANSFERRED.
+- Recall: SKIPPED stays final in v1 (decision D-3). Not planned.
 
 ## Rules
 1. Each transition = one guarded `UPDATE ... WHERE status = ANY(allowed_from)` + one event row, same transaction (INV-8).
