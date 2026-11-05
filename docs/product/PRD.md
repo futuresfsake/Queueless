@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 ## 1. Problem
 Patients in Philippine clinics and barangay health centers stand in line for hours with no idea when they will be served. Staff track queues on paper or shouting. Many patients have only basic phones and weak signal.
@@ -13,6 +13,8 @@ Queue systems are a very common IT capstone topic. The idea is not the different
 1. Proven correctness under concurrency and crashes (row locking, idempotency, event log).
 2. Designing for Filipino users (SMS-first, basic phones, weak signal) — post-MVP.
 3. Honest, measured validation (no invented numbers).
+4. **Executable proof:** an invariant auditor that anyone can run against the live database (and that CI runs after every load test), instead of claims in a README.
+5. **Locally grounded design:** priority lanes for senior citizens/PWD/pregnant patients, and Cebuano-language patient pages and SMS (post-MVP).
 
 ## 4. Users and roles
 | Role | Who | Can do |
@@ -40,6 +42,8 @@ In:
 - Patient ticket page (live status, cancel)
 - Append-only event log
 - Idempotent, concurrency-safe call-next and booking
+- Invariant auditor (Integrity panel + CLI used in CI)
+- Abuse protection (queue cap, join cap, login throttle)
 - Jest/Testcontainers tests, k6 concurrency test, GitHub Actions CI
 - Docker Compose setup, deployed demo, README with validation table
 
@@ -54,7 +58,7 @@ Medical records, diagnoses, payments, native mobile apps.
 | NFR-1 | Correctness | Invariants INV-1..INV-9 hold under concurrency (see schema doc) |
 | NFR-2 | Latency | Call-next p95 — **TBD** (measure with k6; no target claimed until measured) |
 | NFR-3 | Real-time | TV/patient update after staff click — **TBD** (measure) |
-| NFR-4 | Privacy | Name/nickname + phone only; consent logged; phone purged after 30 days |
+| NFR-4 | Privacy | Name/nickname + phone only; consent logged; name and phone cleared after 30 days |
 | NFR-5 | Setup | `docker compose up` starts the full stack |
 | NFR-6 | Resilience | API restart does not lose or corrupt queue state (state is in Postgres) |
 
