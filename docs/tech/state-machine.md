@@ -1,6 +1,6 @@
 # Ticket State Machine
 
-Status: Final v1.0 · Last updated: 2026-11-05
+Status: Final v1.1 · Last updated: 2026-11-05
 
 ## Diagram
 ```mermaid
@@ -24,7 +24,7 @@ stateDiagram-v2
 |---|---|---|---|---|
 | (none) | TICKET_ISSUED | WAITING | Patient / Staff | Creates ticket, counter upsert, consent |
 | WAITING | CALLED | CALLED | Staff | `SKIP LOCKED` selection |
-| WAITING | CANCELLED | CANCELLED | Patient / Staff | |
+| WAITING | CANCELLED | CANCELLED | Patient / Staff | Releases the slot if the ticket held one (D-29) |
 | CALLED | STARTED | SERVING | Staff | |
 | CALLED | NO_SHOW | NO_SHOW | Staff | |
 | CALLED | SKIPPED | SKIPPED | Staff | Final in MVP |
