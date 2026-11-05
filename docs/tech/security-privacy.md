@@ -1,6 +1,6 @@
 # Security & Privacy
 
-Status: Draft · Last updated: 2026-11-05
+Status: Final v1.0 · Last updated: 2026-11-05
 
 ## 1. Data minimization (Data Privacy Act of 2012)
 - Collected: name or nickname, optional phone number, ticket metadata.
@@ -12,7 +12,7 @@ Status: Draft · Last updated: 2026-11-05
 - Patient rights: documented contact for deletion requests (README limitation: manual process in MVP).
 
 ## 2. Authentication & authorization
-- Passwords hashed (argon2 or bcrypt); JWT with short expiry; secret from env.
+- Passwords hashed (argon2 or bcrypt); JWT access token, 8 h expiry, no refresh tokens in MVP (D-7); secret from env.
 - `RolesGuard` on every controller; default deny.
 - Staff can act only inside their tenant; tenant comes from the JWT, never from request body.
 - Guest patient access via unguessable token (≥128-bit random) in the URL; token grants access to that one ticket only.
