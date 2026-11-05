@@ -153,6 +153,13 @@ If `app.tenant_id` is unset, `current_setting(..., true)` returns NULL → no ro
 
 Super Admin operations on `tenants`/`users` use a separate code path with `app.is_super_admin = 'true'` and policies that allow it; keep this path tiny and tested.
 
+Extra narrow policies (implemented in `apps/api/prisma/migrations/20261105000100_rls_and_constraints`):
+- `tickets.ticket_token_lookup` — SELECT where `access_token = app.ticket_token` (guest ticket page, before tenant is known).
+- `users.users_login_lookup` — SELECT where `email = app.login_email` (login).
+- `tenants.tenants_read` — public SELECT (slug/name only are exposed by the API); writes need `app.is_super_admin`.
+
+Implementation notes: emails are stored lowercase (CHECK) instead of `citext`; `ticket_counters` carries a denormalized `tenant_id`; the app role `queueless_app` is created by the migration without a password (set it out-of-band with `ALTER ROLE`). Migrations run with `DATABASE_URL` pointed at the owner role; the API runs with the app role.
+
 Request wrapper:
 ```ts
 await prisma.$transaction(async (tx) => {
