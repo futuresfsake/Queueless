@@ -1,6 +1,6 @@
 # Validation Results
 
-Status: Draft · Last updated: 2026-11-05
+Status: Template (results stay TBD until measured) · Last updated: 2026-11-05
 
 **Rule: never fake usage numbers.** Fill the Result column only with what was actually measured. Label simulated data as simulated.
 
