@@ -2,7 +2,7 @@
 
 Last updated: 2026-11-05
 
-Update this at the end of every work session.
+Update this at the end of every work session. Latest session log: [sessions/2026-11-05.md](sessions/2026-11-05.md).
 
 ## Documentation
 **Complete and final (v1.1, senior review applied — see [CHANGELOG](CHANGELOG.md)).** Every doc is marked Final, all open questions are resolved in [decisions-log](product/decisions-log.md) (D-1..D-24), and the plan covers everything through the Dec 1–7 interviews. Edit a doc only with a dated change or a new ADR.
