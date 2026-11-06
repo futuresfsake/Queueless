@@ -1,6 +1,6 @@
 # Decisions Log (Product Owner Confirmations)
 
-Status: Final v1.1 · Last updated: 2026-11-05
+Status: Final v1.2 · Last updated: 2026-11-06
 
 Every previously open question is resolved here. These are the defaults the project builds against. Changing one requires a new ADR or a dated edit to this log. Anything marked **Gate** has a date by which it is re-checked against real information.
 
@@ -49,3 +49,11 @@ All decisions above are treated as approved by the product owner as of 2026-11-0
 | ID | Question | Decision | Why | Affects |
 |---|---|---|---|---|
 | D-32 | What is M0? | **M0 = Foundation**: docs, scaffold, platform/third-party setup, database, auth, and a deployed hello-world (phases F1..F6). Old M1/M2 fold into M0; M3..M8 become M1..M6. Hello-world deploy gate (D-4) moves from Nov 8 to end of Nov 7. | The riskiest unknowns (role provisioning on managed Postgres, RLS never executed, WebSockets on host, accounts) should fail early, before feature work depends on them | milestones.md, implementation-plan.md |
+
+## Added during F5 (2026-11-06, auth implementation)
+| ID | Question | Decision | Why | Affects |
+|---|---|---|---|---|
+| D-33 | Password hashing | **scrypt from Node's built-in `crypto`** (N=2^16, r=8, p=1; parameters stored in each hash so cost can be raised later). Not argon2/bcrypt. | Zero native dependencies to build in CI/Railway (we already hit a build-script failure with testcontainers); scrypt is an OWASP-recommended KDF. security-privacy.md allowed "argon2 or bcrypt"; this is a documented deviation. | security-privacy.md |
+| D-34 | Token validity vs deactivation | JWT is verified **and** the user, their clinic and role/tenant claims are re-read from the database on every request. | US-2 "deactivate staff" must work immediately, not after the 8 h token expires. Cost: one indexed query per request (fine at MVP scale). | security-privacy.md, T-17 |
+| D-35 | Login throttle keys | 5 failures / 15 min **per email** (D-28) plus 20 failures / 15 min **per IP**; in-memory (ADR-005); unknown emails counted the same. Known trade-off: an attacker can lock a known email for 15 min. `TRUST_PROXY` must be set behind a proxy. | A clinic shares one NAT IP, so the IP cap is looser; in-memory is enough for one server | security-privacy.md, T-25 |
+| D-36 | Clinic Admin scope over users | Clinic Admin creates and manages **STAFF only**. Role and tenant are never accepted from the request body. Admins cannot deactivate admins (including themselves). | Prevents privilege escalation and self-lockout | api.md, T-17 |

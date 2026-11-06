@@ -42,11 +42,11 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [x] **Tests T-3, T-12:** app role is non-owner, no BYPASSRLS; every table RLS-forced; `queue_events` is append-only
 
 ### F5 Auth & tenancy
-- [ ] Auth module: login, JWT (8 h), `RolesGuard`, `@Roles()`
-- [ ] Login throttle: 5 failures / 15 min (D-28)
-- [ ] Tenants / users / service-points CRUD
-- [ ] Minimal seed: Super Admin by script only (D-17)
-- [ ] RBAC tests per role (Super Admin / Clinic Admin / Staff)
+- [x] Auth module: login, JWT (8 h), `AuthGuard` + `RolesGuard` (default deny), `@Roles()`, `@Public()`; user re-checked every request (D-34)
+- [x] Login throttle: 5 failures / 15 min per email + 20 per IP (D-28, D-35)
+- [x] Tenants / users / service-points CRUD (Zod schemas in `packages/shared`)
+- [x] Super Admin seed script (`seed:super-admin`, credentials from env, D-17). Demo tenant seed is M3
+- [x] RBAC tests per role (T-17, T-25, US-1..US-4, US-21): 32 integration tests
 
 ### F6 Hello-world deploy (D-4 gate)
 - [ ] Run migrations as owner on Railway Postgres; set app role password

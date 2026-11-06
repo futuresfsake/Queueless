@@ -12,7 +12,7 @@ Status: Final v1.1 · Last updated: 2026-11-05
 - Patient rights: documented contact for deletion requests (README limitation: manual process in MVP).
 
 ## 2. Authentication & authorization
-- Passwords hashed (argon2 or bcrypt); JWT access token, 8 h expiry, no refresh tokens in MVP (D-7); secret from env.
+- Passwords hashed with scrypt (D-33); JWT access token, 8 h expiry, no refresh tokens in MVP (D-7); secret from env.
 - `RolesGuard` on every controller; default deny.
 - Staff can act only inside their tenant; tenant comes from the JWT, never from request body.
 - Guest patient access via unguessable token (≥128-bit random) in the URL; token grants access to that one ticket only and **expires 24 h after the ticket reaches a final state**. The token is never logged (log the ticket id instead).
@@ -49,3 +49,10 @@ Penetration testing, SMS abuse protection (post-MVP with Redis), formal DPO proc
 
 ## Continuous verification (v1.1)
 The security posture claims here are checked by the invariant auditor (A-6, A-7): RLS enabled and forced on all tenant tables, the app role is not an owner and cannot bypass RLS, `queue_events` is not updatable by the app role, and no personal data older than 30 days remains. See invariant-auditor.md.
+
+## 5. Authentication details (implemented in F5)
+- Every request re-reads the user, their clinic and the role/tenant claims from the database (D-34), so deactivation is immediate.
+- Login failures are generic (`UNAUTHORIZED`) for unknown email, wrong password, deactivated user and deactivated clinic; verification runs against a dummy hash for unknown emails so timing does not reveal accounts.
+- Login throttle: D-35. Known trade-off: a known email can be locked for 15 minutes by someone repeatedly failing it. Behind a proxy set `TRUST_PROXY=1`, otherwise leave it unset (a spoofable `X-Forwarded-For` would defeat the per-IP cap).
+- `JWT_SECRET` is required at startup; in production it must be 32+ characters and not start with `change-me`.
+- Super Admin exists only via `pnpm --filter @queueless/api seed:super-admin` (credentials from env vars, D-17).

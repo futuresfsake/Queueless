@@ -51,3 +51,6 @@ Package manager: pnpm workspaces.
 
 ## Time (decision D-19)
 Never call `Date.now()`, `new Date()` or SQL `now()` directly in business logic. Use the injected `Clock` service (application code) and pass timestamps into SQL where behavior depends on them. This lets tests and the simulator use a virtual clock. DB defaults like `created_at DEFAULT now()` are allowed for pure audit columns.
+
+## Running the API (learned in F5)
+NestJS injects constructor dependencies using TypeScript's `emitDecoratorMetadata`. **esbuild-based runners (`tsx`) do not emit it**, so a service started with `tsx` boots but every injected dependency is `undefined`. Use `pnpm --filter @queueless/api dev` (ts-node, emits metadata), `tsc` for builds, and ts-jest for tests. `tsx` is fine for scripts that construct classes by hand (e.g. `seed:super-admin`).

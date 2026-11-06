@@ -67,7 +67,7 @@ Rate limiting on all `/public` POSTs.
 Join: `join.servicePoint` (JWT or public display id), `join.ticket` (token).
 
 ## Error codes
-`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `CONSENT_REQUIRED`, `QUEUE_EMPTY`, `INVALID_TRANSITION`, `SLOT_FULL`, `SERVICE_POINT_INACTIVE`, `IDEMPOTENCY_KEY_REQUIRED`, `IDEMPOTENCY_KEY_REUSED`, `RATE_LIMITED`, `QUEUE_FULL`, `TOO_MANY_ATTEMPTS`.
+`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `CONSENT_REQUIRED`, `QUEUE_EMPTY`, `INVALID_TRANSITION`, `SLOT_FULL`, `SERVICE_POINT_INACTIVE`, `IDEMPOTENCY_KEY_REQUIRED`, `IDEMPOTENCY_KEY_REUSED`, `RATE_LIMITED`, `QUEUE_FULL`, `TOO_MANY_ATTEMPTS`, `CONFLICT` (duplicate slug/email/code, 409), `INTERNAL_ERROR` (500, details never leaked).
 
 ## Additions (v1.1)
 | Method | Path | Role | Story |
@@ -79,3 +79,11 @@ Join: `join.servicePoint` (JWT or public display id), `join.ticket` (token).
 Guest token validity: a ticket token works until 24 h after the ticket reaches a final state; after that `/public/t/:token` returns `404 NOT_FOUND`.
 `POST /public/.../tickets` returns `409 QUEUE_FULL` when the service point has `max_waiting` WAITING tickets.
 `POST /auth/login` returns `429 TOO_MANY_ATTEMPTS` after repeated failures (see security-privacy.md); failed logins always return the same generic `UNAUTHORIZED`.
+
+## Implemented in F5 (2026-11-06)
+- `POST /auth/login` -> `200 { accessToken, user }` (JWT 8 h). `GET /auth/me` any role.
+- `POST /tenants` (SUPER_ADMIN) creates a clinic **and** its first Clinic Admin atomically: body `{ slug, name, admin: { email, password } }`. `GET /tenants` lists.
+- `POST/GET /users`, `PATCH /users/:id` (CLINIC_ADMIN): STAFF only; PATCH accepts `{ isActive?, password? }`. Another clinic's user is `404`.
+- `POST /service-points`, `PATCH /service-points/:id` (CLINIC_ADMIN); `GET /service-points` (CLINIC_ADMIN, STAFF). `maxWaiting` defaults to 200.
+- Default deny: every route needs `@Public()` or `@Roles(...)`; otherwise `403`. `/health` is public.
+- Unknown JSON keys in bodies are dropped, so `role` / `tenantId` in a request body never take effect.
