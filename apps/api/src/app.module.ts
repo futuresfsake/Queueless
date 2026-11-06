@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { DbModule } from './db/db.module';
 import { HealthController } from './health.controller';
+import { EchoGateway } from './realtime/echo.gateway';
 import { ServicePointsController } from './service-points/service-points.controller';
 import { ServicePointsService } from './service-points/service-points.service';
 import { TenantsController } from './tenants/tenants.controller';
@@ -15,6 +16,7 @@ import { UsersService } from './users/users.service';
   imports: [DbModule, AuthModule],
   controllers: [HealthController, TenantsController, UsersController, ServicePointsController],
   providers: [
+    EchoGateway,
     TenantsService,
     UsersService,
     ServicePointsService,
