@@ -17,7 +17,7 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [x] ESLint + Prettier + tsconfig strict
 - [x] GitHub Actions: install, lint, build, test
 - [x] Fill "Commands" section in `CLAUDE.md`
-- [ ] `/health` also checks the DB (do in F4 once DB is reachable)
+- [x] `/health` also checks the DB (done in F4)
 
 ### F3 Platform & third-party setup
 - [x] Start Docker Desktop; `docker compose up -d postgres` healthy (host port 5434; image postgres:16-alpine)
@@ -33,13 +33,13 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [x] Apply `init` then `rls_and_constraints` migrations as `queueless_owner` (via `scripts/provision-roles.sql` first) — applied cleanly, no SQL changes needed
 - [x] `ALTER ROLE queueless_app PASSWORD ...` (local placeholder)
 - [x] Verify the app connection: `rolsuper = false`, `rolbypassrls = false` (local; repeat on Railway in F6)
-- [ ] `TenantPrisma.run()` helper (transaction + `set_config('app.tenant_id', $1, true)`)
-- [ ] Injectable `Clock` service (D-19)
-- [ ] `/health` checks the DB
-- [ ] Testcontainers setup (real Postgres, app role)
-- [ ] **Test T-1:** tenant A cannot read/write tenant B (INV-7)
-- [ ] **Test T-2:** unset tenant returns no rows
-- [ ] **Test T-3:** `queue_events` is append-only (UPDATE/DELETE rejected)
+- [x] `TenantPrisma` (`run`, `runAsSuperAdmin`, `runForLogin`, `runForTicketToken`): one transaction, transaction-local `set_config`, tenant id validated as UUID
+- [x] Injectable `Clock` (`SystemClock`, `FakeClock`, `localDate` for Asia/Manila)
+- [x] `/health` checks the DB (via Prisma)
+- [x] Testcontainers setup (real Postgres 16, provisioned like prod, app role; `pnpm --filter @queueless/api test:int`; CI step added)
+- [x] **Test T-1:** tenant A cannot read/write tenant B (INV-7)
+- [x] **Test T-2:** unset tenant returns no rows; writes rejected; no leak across pooled transactions
+- [x] **Tests T-3, T-12:** app role is non-owner, no BYPASSRLS; every table RLS-forced; `queue_events` is append-only
 
 ### F5 Auth & tenancy
 - [ ] Auth module: login, JWT (8 h), `RolesGuard`, `@Roles()`
