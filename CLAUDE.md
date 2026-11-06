@@ -46,6 +46,8 @@ Package manager: pnpm (workspace). Windows: write files without a BOM (use the W
 pnpm install
 pnpm --filter @queueless/shared build   # required before api lint/build
 pnpm lint | pnpm test | pnpm build       # whole workspace
+pnpm --filter @queueless/api test:int    # integration tests (needs Docker; Testcontainers)
+pnpm --filter @queueless/api exec prisma generate  # after install or schema change
 pnpm --filter @queueless/api dev         # API on :3000 (prefix /api/v1)
 pnpm --filter @queueless/web dev         # web on :5173 (proxies /api)
 docker compose up -d postgres            # Postgres 16 on host :5434 (5432 and 5433 are taken by other local Postgres instances)

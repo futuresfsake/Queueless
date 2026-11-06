@@ -17,6 +17,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @queueless/shared build
+      - run: pnpm --filter @queueless/api exec prisma generate
       - run: pnpm lint
       - run: pnpm test
+      - run: pnpm --filter @queueless/api test:int
       - run: pnpm build
