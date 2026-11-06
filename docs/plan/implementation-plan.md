@@ -49,8 +49,11 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [x] RBAC tests per role (T-17, T-25, US-1..US-4, US-21): 32 integration tests
 
 ### F6 Hello-world deploy (D-4 gate)
-- [ ] Run migrations as owner on Railway Postgres; set app role password
+- [x] (prepared + rehearsed locally) Migration runner `migrate.js`: provision -> migrate as owner -> set app password -> A-6 guard
+- [ ] Run it on Railway Postgres (first deploy, see runbook)
+- [x] (prepared) Dockerfile, `railway.toml`, `apps/web/vercel.json`, `VITE_API_URL`, CORS via `CORS_ORIGINS`, non-root container
 - [ ] Deploy API (connects as `queueless_app`) and web (Vercel); CORS set
+- [x] (prepared) Socket.IO echo gateway + web WebSocket check; verified against the production container with the allowed origin
 - [ ] WebSocket echo works from the Vercel origin
 - [ ] `/health` green on the live URL; `rolsuper`/`rolbypassrls` false/false on the deployed connection
 - [ ] If role creation or WebSockets fail: apply R4/R9 fallback (owner-run `scripts/provision-roles.sql`, or switch to Render)
