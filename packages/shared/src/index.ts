@@ -13,3 +13,4 @@ export const HealthResponse = z.object({
   uptimeSeconds: z.number(),
 });
 export type HealthResponse = z.infer<typeof HealthResponse>;
+export * from './admin';
