@@ -9,7 +9,7 @@ Every previously open question is resolved here. These are the defaults the proj
 | D-1 | Redis in MVP? | **No.** Single API server, in-memory Socket.IO and throttling. Redis + BullMQ arrive with SMS (post-MVP). | No MVP feature needs it; saves infra time | ADR-005 |
 | D-2 | `call-next` on empty queue | **`409 QUEUE_EMPTY`** with the standard error body | Client can show a clear message; consistent error shape | api.md, US-10 |
 | D-3 | Is SKIPPED recoverable? | **Final.** No recall in v1. | Keeps the state machine and INV-2 simple | state-machine.md |
-| D-4 | Hosting | **Railway** (API + Postgres), **Vercel** (web). Fallback: Render. **Gate: Nov 8** deploy hello-world with DB and WebSockets. | One platform for API+DB; supports WebSockets | runbook, R4 |
+| D-4 | Hosting | **Railway** (API + Postgres), **Vercel** (web). Fallback: Render. **Gate: end of Nov 7 (hard stop Nov 8 morning)**, moved up from Nov 8 by D-32: deploy hello-world with DB and WebSockets. | One platform for API+DB; supports WebSockets | runbook, R4 |
 | D-5 | Package manager / layout | **pnpm** workspaces: `apps/api`, `apps/web`, `packages/shared` | Already scaffolded | conventions.md |
 | D-6 | Ticket number format | `PREFIX-NNN` (3-digit zero-padded, grows past 999), resets daily per service point on the clinic-local date (`Asia/Manila`) | Short, readable, SMS-friendly | schema.md |
 | D-7 | Auth | Email + password, JWT access token, 8 h expiry, **no refresh tokens** in MVP | Smallest safe thing for a demo | security-privacy.md |
@@ -18,7 +18,7 @@ Every previously open question is resolved here. These are the defaults the proj
 | D-10 | Booked vs walk-in order | **FIFO by ticket sequence** for both in MVP. Slot time is informational. Slot-priority ordering is post-MVP. | Avoids fairness/edge-case scope | US-8 |
 | D-11 | Consent text | Single versioned text, `text_version = "v1"`, shown before ticket issue; stored in `consents` | Auditable | security-privacy.md |
 | D-12 | No-show handling | **Manual** in MVP. Auto no-show after 10 min (configurable per tenant) is post-MVP. | Job infrastructure comes with BullMQ | state-machine.md |
-| D-13 | shadcn/ui | Initialized at the start of M4 when the first real component is needed | No dead setup | implementation-plan.md |
+| D-13 | shadcn/ui | Initialized at the start of M2 (was M4 before the v1.2 renumbering) when the first real component is needed | No dead setup | implementation-plan.md |
 | D-14 | Idempotency | Client generates a UUID per user action and reuses it on retry; server keeps keys 24 h | Standard pattern | ADR-004 |
 | D-15 | Socket payloads | Sockets are **hints** (`servicePointId`, `version`); clients refetch the snapshot | Correct by construction; simple | TRD-HLD.md |
 | D-16 | Language | English UI/SMS in MVP with all strings in one catalog (no hard-coded text). Post-MVP (US-34): add **Cebuano** and Filipino for the patient page and SMS templates; the product owner (a Cebu native) reviews all translations before release. Do not ship machine-only translations. | Cebu is the home context; patients on basic phones read their own language best | PRD, US-34 |
@@ -27,7 +27,7 @@ Every previously open question is resolved here. These are the defaults the proj
 | D-19 | Time source | **All code reads time through an injectable `Clock` service** from day one | Lets the simulator run a 4-hour day in ~2 minutes with a virtual clock; makes tests deterministic | conventions.md, simulator-spec.md |
 | D-20 | SMS gateway | httpSMS on an Android phone + prepaid SIM as primary **if** inbound webhook works; Semaphore as outbound-only fallback. **Gate: Nov 15** verify inbound before building on it. | Context doc told us to check inbound first | sms-outbox-design.md |
 | D-21 | Wait-time method | Weighted moving average of last 10 service durations per service point, divided by active staff; accuracy = mean absolute error in minutes, labeled simulated vs real | Matches context doc | wait-time-estimation.md |
-| D-22 | Quality gate | CI (lint, typecheck, test, build) required green on `main`; k6 concurrency tests run in CI from M6 | Proof is the product | test-plan.md |
+| D-22 | Quality gate | CI (lint, typecheck, test, build) required green on `main`; k6 concurrency tests run in CI from M4 (was M6 before the v1.2 renumbering) | Proof is the product | test-plan.md |
 | D-23 | Demo data | Seeded demo tenant `demo-clinic`; simulated data always labeled **SIMULATED** in UI and README | Honesty rule | validation-results.md |
 | D-24 | Submission scope freeze | **No new features after Nov 13.** Nov 14 = submit only. | Deadline safety | milestones.md |
 
@@ -44,3 +44,8 @@ All decisions above are treated as approved by the product owner as of 2026-11-0
 | D-29 | Cancelling a booked ticket | Releases slot capacity in the same transaction under the slot lock | Otherwise capacity leaks | schema.md, T-23 |
 | D-30 | Idempotency semantics | Only successful results stored; errors roll back; no IN_PROGRESS state | Reflects what the database can actually observe | ADR-004 |
 | D-31 | Estimate ranges | ±25 % (labeled assumption) until ≥ 50 scored tickets, then ± measured MAE | No invented precision | wait-time-estimation.md |
+
+## Added in v1.2 (2026-11-06, milestone restructure)
+| ID | Question | Decision | Why | Affects |
+|---|---|---|---|---|
+| D-32 | What is M0? | **M0 = Foundation**: docs, scaffold, platform/third-party setup, database, auth, and a deployed hello-world (phases F1..F6). Old M1/M2 fold into M0; M3..M8 become M1..M6. Hello-world deploy gate (D-4) moves from Nov 8 to end of Nov 7. | The riskiest unknowns (role provisioning on managed Postgres, RLS never executed, WebSockets on host, accounts) should fail early, before feature work depends on them | milestones.md, implementation-plan.md |
