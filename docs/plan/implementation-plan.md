@@ -20,8 +20,8 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [ ] `/health` also checks the DB (do in F4 once DB is reachable)
 
 ### F3 Platform & third-party setup
-- [ ] Start Docker Desktop; `docker compose up -d postgres` healthy
-- [ ] Copy `.env.example` → `.env`; set `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `JWT_SECRET` locally (never in chat or git)
+- [x] Start Docker Desktop; `docker compose up -d postgres` healthy (host port 5434; image postgres:16-alpine)
+- [x] Copy `.env.example` → `.env` (local dev placeholders; `.env` is git-ignored). Real secrets only in Railway/GitHub secret stores
 - [ ] Railway: account, project, Postgres plugin, API service linked to the GitHub repo
 - [ ] Vercel: account, project linked to `apps/web`
 - [ ] GitHub: Actions secrets for deploy (if needed), branch protection requiring CI green on `main`
@@ -30,9 +30,9 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [ ] Write the chosen versions/accounts (no secrets) in the runbook
 
 ### F4 Database
-- [ ] Apply `init` then `rls_and_constraints` migrations as `queueless_owner`; fix SQL errors; update schema doc and changelog if SQL changes
-- [ ] `ALTER ROLE queueless_app PASSWORD ...` from the secret store
-- [ ] Verify the app connection: `rolsuper = false`, `rolbypassrls = false`
+- [x] Apply `init` then `rls_and_constraints` migrations as `queueless_owner` (via `scripts/provision-roles.sql` first) — applied cleanly, no SQL changes needed
+- [x] `ALTER ROLE queueless_app PASSWORD ...` (local placeholder)
+- [x] Verify the app connection: `rolsuper = false`, `rolbypassrls = false` (local; repeat on Railway in F6)
 - [ ] `TenantPrisma.run()` helper (transaction + `set_config('app.tenant_id', $1, true)`)
 - [ ] Injectable `Clock` service (D-19)
 - [ ] `/health` checks the DB
