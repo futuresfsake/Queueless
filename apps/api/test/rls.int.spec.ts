@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { assertAppRoleSafe } from '../src/db/migrator';
 import { startTestDb, TestDb } from './support/test-db';
 
 let db: TestDb;
@@ -121,11 +122,16 @@ describe('Database posture', () => {
     const rows = await db.prisma.$queryRaw<{ relname: string; relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
       SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity
       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relname <> '_prisma_migrations'
+      WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relname <> 'schema_migrations'
       ORDER BY c.relname`;
     const exposed = rows.filter((r) => !r.relrowsecurity || !r.relforcerowsecurity);
-    // slots/etc. that lack a policy would show here; every table except none is expected to be protected.
     expect(exposed.map((r) => r.relname)).toEqual([]);
+  });
+
+  it('the migrator bookkeeping table (no tenant data) is unreachable for the app role', async () => {
+    const [{ can }] = await db.prisma.$queryRaw<{ can: boolean }[]>`
+      SELECT has_table_privilege(current_user, 'schema_migrations', 'SELECT') AS can`;
+    expect(can).toBe(false);
   });
 
   it('T-12 / INV-6: queue_events cannot be updated or deleted by the app role', async () => {
@@ -155,6 +161,14 @@ describe('Database posture', () => {
     ).rejects.toThrow();
     const events = await db.tenantPrisma.run(tenantA, (tx) => tx.queueEvent.findMany());
     expect(events).toHaveLength(1);
+  });
+
+  it('A-6: the deploy guard accepts the app role and rejects a superuser URL', async () => {
+    await expect(assertAppRoleSafe(db.appUrl)).resolves.toBeUndefined();
+    const superUrl = db.appUrl.replace('queueless_app:test-app-password', 'postgres:postgres');
+    await expect(assertAppRoleSafe(superUrl)).rejects.toThrow(/unsafe/);
+    const ownerUrl = db.appUrl.replace('queueless_app:test-app-password', 'queueless_owner:queueless_owner');
+    await expect(assertAppRoleSafe(ownerUrl)).rejects.toThrow(/unsafe/);
   });
 
   it('T-19 / US-22: the database answers a trivial query as the app role', async () => {
