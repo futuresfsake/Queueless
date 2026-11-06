@@ -2,7 +2,7 @@
 
 Status: Final v1.1 · Last updated: 2026-11-05
 
-Story: US-33. Window: M6 (Nov 11), alongside the k6 proof. Decision D-26.
+Story: US-33. Window: M4 (Nov 11), alongside the k6 proof. Decision D-26.
 
 ## 1. Why this exists
 Most queue projects claim correctness. This one **checks it, continuously, in the open**. The auditor is a set of read-only SQL checks that run against the real database and report pass/fail per invariant. It runs:
