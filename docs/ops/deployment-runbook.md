@@ -23,7 +23,7 @@ Services: `postgres` (16), `api` (NestJS), `web` (Vite). Migrations run as the o
 `lint → typecheck → test → build → (deploy on main)`. Required check before merge.
 
 ## Production (target)
-- API + Postgres: Railway (decision D-4; fallback Render, gate Nov 8). Web: Vercel.
+- API + Postgres: Railway (decision D-4; fallback Render, gate: M0 F6, end of Nov 7). Web: Vercel.
 - Deploy order: run migrations (owner role) → deploy API → deploy web.
 - Ensure WebSocket support is enabled on the API host and CORS includes the web origin.
 - After deploy: run `/health`, log in with demo account, issue a ticket, call next.
@@ -49,4 +49,4 @@ The migration creates `queueless_app` (LOGIN, NOSUPERUSER, NOBYPASSRLS) but not 
 ```sql
 ALTER ROLE queueless_app PASSWORD '<from secret store>';
 ```
-On a managed Postgres confirm during the Nov 8 hello-world deploy that (a) the migration role can `CREATE ROLE`, and (b) `SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user` for the **app** connection returns false/false. If the host forbids `CREATE ROLE`, create the role by hand once with an owner-run script and keep the migration's `IF NOT EXISTS` guard. After every deploy run the auditor CLI (check A-6 verifies this posture).
+On a managed Postgres confirm during the M0 F6 hello-world deploy that (a) the migration role can `CREATE ROLE`, and (b) `SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user` for the **app** connection returns false/false. If the host forbids `CREATE ROLE`, create the role by hand once with an owner-run script and keep the migration's `IF NOT EXISTS` guard. After every deploy run the auditor CLI (check A-6 verifies this posture).
