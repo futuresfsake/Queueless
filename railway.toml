@@ -1,0 +1,11 @@
+# Railway service for the API. Postgres is a separate Railway database service.
+# Step-by-step: docs/ops/deployment-runbook.md ("First deploy").
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/api/Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
