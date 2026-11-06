@@ -1,7 +1,7 @@
-import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { Client } from 'pg';
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { applyMigrations, provisionRoles, setAppRolePassword } from '../../src/db/migrator';
 import { PrismaService } from '../../src/db/prisma.service';
 import { TenantPrisma } from '../../src/db/tenant-prisma.service';
 
@@ -20,16 +20,6 @@ export interface TestDb {
   /** Superuser connection, for deliberately corrupting data or inspecting state. Never use it to test RLS. */
   superUser: () => Promise<Client>;
   stop: () => Promise<void>;
-}
-
-async function runSql(url: string, sql: string): Promise<void> {
-  const client = new Client({ connectionString: url });
-  await client.connect();
-  try {
-    await client.query(sql);
-  } finally {
-    await client.end();
-  }
 }
 
 /**
@@ -52,18 +42,14 @@ export async function startTestDb(): Promise<TestDb> {
   const ownerUrl = url('queueless_owner', 'queueless_owner');
   const appUrl = url('queueless_app', APP_PASSWORD);
 
-  await runSql(superUrl, readFileSync(join(REPO_ROOT, 'scripts', 'provision-roles.sql'), 'utf8'));
-
-  const migrationsDir = join(API_ROOT, 'prisma', 'migrations');
-  const migrations = readdirSync(migrationsDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
-    .sort();
-  for (const m of migrations) {
-    await runSql(ownerUrl, readFileSync(join(migrationsDir, m, 'migration.sql'), 'utf8'));
-  }
-
-  await runSql(superUrl, `ALTER ROLE queueless_app PASSWORD '${APP_PASSWORD}'`);
+  // Same code path as production (src/scripts/migrate.ts).
+  const paths = {
+    provisionSql: join(REPO_ROOT, 'scripts', 'provision-roles.sql'),
+    migrationsDir: join(API_ROOT, 'prisma', 'migrations'),
+  };
+  await provisionRoles(superUrl, paths, 'queueless_owner');
+  await applyMigrations(ownerUrl, paths);
+  await setAppRolePassword(ownerUrl, APP_PASSWORD);
 
   const prisma = new PrismaService(appUrl);
   return {
