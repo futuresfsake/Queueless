@@ -2,6 +2,16 @@
 
 Docs are edited only with a dated entry here (or a new ADR).
 
+## v1.2 — 2026-11-06 — Milestone restructure (foundation first)
+Product-owner feedback: M0 should be the foundation (auth, database, third-party tools), not just docs.
+
+- **M0 is now Foundation**, phases F1..F6: docs, scaffold, platform/third-party setup (new), database, auth & tenancy, hello-world deploy.
+- Old M1 Scaffold and M2 Data & Auth fold into M0. Old M3..M8 renumbered M1..M6 (mapping at the bottom of `plan/milestones.md`).
+- **Deploy gate moved earlier (D-32):** hello-world deploy with DB, app role and WebSockets is now the last step of M0 (end of Nov 7, hard stop Nov 8 morning) instead of Nov 8.
+- Added a third-party/accounts checklist (Docker, Railway, Vercel, GitHub secrets/branch protection, k6, SMS lead-time items).
+- Login throttle moved to F5 (with auth); `/health` DB check moved to F4.
+- Updated references in decisions-log (D-4, D-13, D-22, new D-32), risks-and-cuts, invariant-auditor, deployment-runbook. Session log 2026-11-05 is historical and keeps the old numbering.
+
 ## v1.1 — 2026-11-05 — Senior review
 A critical engineering review of v1.0. Defects fixed, gaps closed, and differentiators added.
 
