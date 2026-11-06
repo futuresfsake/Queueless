@@ -1,11 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
 import type { HealthResponse } from '@queueless/shared';
+import { Public } from './auth/decorators';
 import { PrismaService } from './db/prisma.service';
 
 @Controller('health')
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 
+  @Public()
   @Get()
   async check(): Promise<HealthResponse> {
     let db: 'up' | 'down' = 'down';
