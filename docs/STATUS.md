@@ -13,17 +13,17 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 ## Done
 - F1: docs v1.1 + v1.2 restructure
 - F2: pnpm workspace; `packages/shared` (Zod); `apps/api` (NestJS, `GET /api/v1/health`, 1 Jest test); `apps/web` (React + Vite + Tailwind v4, TanStack Query); `docker-compose.yml` (Postgres 16); GitHub Actions CI
-- Part of F4 written but unverified: Prisma 6 schema and the init + hand-written RLS migrations. `prisma validate`/`generate` pass. **The SQL has never been executed against a database.**
+- F4 partly done: Prisma schema + init + RLS migrations **applied to a real Postgres 16 and smoke-tested manually** (app role is non-super/no-bypass; cross-tenant read/write blocked; unset tenant sees nothing; `queue_events` UPDATE denied). Automated tests T-1..T-3 still to write.
 
 ## Next
-1. F3: start Docker Desktop, `.env`, Railway + Vercel accounts/projects, k6, branch protection, SMS lead-time items
-2. F4: apply both migrations, fix SQL errors, `TenantPrisma.run()`, `Clock`, Testcontainers, tests T-1..T-3
+1. F3 (rest): Railway + Vercel accounts/projects, k6, branch protection, SMS lead-time items
+2. F4 (rest): `TenantPrisma.run()`, `Clock`, Testcontainers, tests T-1..T-3
 3. F5: auth (JWT, RolesGuard, login throttle), tenants/users/service-points CRUD, Super Admin seed
 4. F6: hello-world deploy (Railway + Vercel) with app role and WebSocket echo
 5. Then M1 Queue core (Nov 8) per [milestones](plan/milestones.md)
 
 ## Blockers
-- Docker daemon not running on this machine (needed for `docker compose up` and Testcontainers). Local PostgreSQL 17 exists but its password is unknown to the assistant.
+- ~~Docker not running~~ — resolved 2026-11-06: Postgres 16 up on host port 5434; migrations applied locally.
 - Railway and Vercel accounts: not yet confirmed to exist.
 
 ## Decision gates
