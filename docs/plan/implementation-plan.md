@@ -71,10 +71,10 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 ## M2 Real-time + Staff UI (Nov 9)
 - [x] Socket.IO gateway, rooms, auth for sockets (`realtime.gateway.ts`: JWT checked in a Socket.IO middleware, room per tenant + service point, signal-only `queue.changed`; tests in `test/realtime.int.spec.ts`)
 - [x] Emit after commit (`QueueService.afterCommit`; no emit when the request fails)
-- [ ] shadcn/ui init (D-13)
-- [ ] Staff screen: queue lists, Call next (Space shortcut), actions
-- [ ] TanStack Query + refetch on reconnect; reconnect banner
-- [ ] Login page, route guards
+- [x] shadcn/ui init (D-13): Button, Input, Label, Card, Badge
+- [x] Staff screen (`/staff`): Called / Serving / Waiting lists, Call next (Space), start/complete/no-show/skip/cancel, walk-in form; idempotency key per click
+- [x] TanStack Query + refetch on socket (re)connect; reconnect banner
+- [x] Login page, route guard by role (UI only; the API enforces permissions)
 
 ## M3 Patient + TV + Booking (Nov 10)
 - [ ] Public endpoints and rate limiting

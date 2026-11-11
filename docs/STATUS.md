@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-10
+Last updated: 2026-11-12
 
 Update this at the end of every work session. Latest session log: [sessions/2026-11-05.md](sessions/2026-11-05.md) (uses the old milestone numbering; see mapping in [milestones](plan/milestones.md)).
 
@@ -19,6 +19,8 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 - F6 prepared (not deployed): migration runner with A-6 safety guard, Dockerfile (non-root) + `railway.toml`, Socket.IO echo gateway, web hello page (API health + WebSocket check), `vercel.json`, CI builds the image, runbook "First deploy". Rehearsed: image built and run in production mode against an empty DB (provision, migrate, guard, health, WebSocket echo, CORS allow/deny); guard verified to stop the container when `DATABASE_URL` is the owner.
 
 - M1 queue core (API): issue ticket (staff walk-in), `call-next` (`FOR UPDATE SKIP LOCKED`), start/complete/no-show/skip/cancel, append-only events, idempotency (service inside the request transaction), staff queue view. State machine is pure data (`ticket-state-machine.ts`) with a table-driven unit test. Raw SQL is in `apps/api/src/db/sql/queue.sql.ts`. Verified: lint, build, 18 unit and 81 integration tests green (34 new in `queue.int.spec.ts`). Mutation-checked: removing `SKIP LOCKED` (caught only by the deterministic lock-overlap test, not by the parallel-HTTP test), the status guard, or the idempotency claim each fails tests. Not yet committed.
+
+- M2 (2026-11-12): staff real-time channel (JWT handshake, tenant rooms, emit after commit; 5 integration tests) and staff web UI (login, route guard, staff screen, walk-in form, reconnect banner, shadcn/ui). Smoke-tested live through the Vite proxy: login, subscribe, issue ticket, `queue.changed` received. The staff screen was typechecked and built but not yet clicked through in a browser.
 
 ## Next
 1. Commit M1 (not committed yet; ask-first rule) and push so CI runs the new integration tests
