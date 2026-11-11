@@ -16,7 +16,7 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [x] Vite + React + Tailwind + TanStack Query boots
 - [x] ESLint + Prettier + tsconfig strict
 - [x] GitHub Actions: install, lint, build, test
-- [x] Fill "Commands" section in `WORKING-GUIDE.md`
+- [x] Fill "Commands" section in the contributor guide
 - [x] `/health` also checks the DB (done in F4)
 
 ### F3 Platform & third-party setup
@@ -59,13 +59,14 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [ ] If role creation or WebSockets fail: apply R4/R9 fallback (owner-run `scripts/provision-roles.sql`, or switch to Render)
 
 ## M1 Queue core (Nov 8)
-- [ ] `events` service (append event)
-- [ ] `idempotency` interceptor + store (no IN_PROGRESS state, ADR-004 v1.1)
-- [ ] Issue ticket (counter upsert, consent, token)
-- [ ] Transition service with guarded UPDATE and event, one transaction
-- [ ] `call-next` with `FOR UPDATE SKIP LOCKED`
-- [ ] start / complete / no-show / skip / cancel
-- [ ] **Tests:** INV-1, INV-2, INV-3 (parallel Promise.all of 3), INV-4 (replay), INV-6, INV-8
+- [x] `events` service (append event)
+- [x] Idempotency store as a service called inside the request transaction (not an interceptor: the key must commit with the queue change; no IN_PROGRESS state, ADR-004 v1.1)
+- [x] Issue ticket (counter upsert, consent, token) — staff walk-in endpoint; public endpoint is M3
+- [x] Transition service with guarded UPDATE and event, one transaction
+- [x] `call-next` with `FOR UPDATE SKIP LOCKED`
+- [x] start / complete / no-show / skip / cancel
+- [x] **Tests** (`apps/api/test/queue.int.spec.ts`, `src/queue/ticket-state-machine.spec.ts`): T-4..T-11, T-13, T-14, T-16, T-22, T-24, INV-1, INV-2, INV-3 (incl. deterministic lock-overlap test), INV-4, INV-8. Mutation-checked: dropping `SKIP LOCKED`, the status guard, or the idempotency claim each fails tests.
+- [ ] Not in M1 (later milestones): T-12 already done (F4); T-18 purge (P1), T-23 booking/cancel slot release (M3; the slot-release path in `applyTransition` is written but untested until booking exists)
 
 ## M2 Real-time + Staff UI (Nov 9)
 - [ ] Socket.IO gateway, rooms, auth for sockets
