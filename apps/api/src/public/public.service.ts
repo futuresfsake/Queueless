@@ -103,7 +103,10 @@ export class PublicService {
               },
             })
           : 0;
+      const tenant = await this.prisma.tenant.findUnique({ where: { id: ticket.tenantId } });
       return {
+        clinicSlug: tenant?.slug ?? '',
+        servicePointCode: point?.code ?? '',
         number: ticket.number,
         status: ticket.status,
         patientName: ticket.patientName,

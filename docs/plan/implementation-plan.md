@@ -78,10 +78,10 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 
 ## M3 Patient + TV + Booking (Nov 10)
 - [x] Public endpoints and rate limiting (backend; `test/public.int.spec.ts`)
-- [ ] Join queue page, My ticket page (live), cancel
-- [ ] TV page
+- [x] Join queue page (`/c/:slug`, with slot booking), My ticket page (`/t/:token`, live, cancel)
+- [x] TV page (`/tv/:slug/:code`)
 - [x] Slots create/list + booking with `FOR UPDATE`; cancellation releases the slot (D-29, T-23); 25 concurrent bookings of one place -> exactly 1 succeeds (INV-5, Jest; the k6 version is M4)
-- [ ] Seed script (demo tenant, accounts, service points, slots)
+- [x] Seed script (`pnpm --filter @queueless/api seed:demo`, password from `DEMO_PASSWORD`)
 - [ ] Phone purge job (`@nestjs/schedule`) — P1
 
 ## M4 Proof (Nov 11)
