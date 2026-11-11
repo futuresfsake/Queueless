@@ -11,9 +11,10 @@ import { TenantsController } from './tenants/tenants.controller';
 import { TenantsService } from './tenants/tenants.service';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
+import { QueueModule } from './queue/queue.module';
 
 @Module({
-  imports: [DbModule, AuthModule],
+  imports: [DbModule, AuthModule, QueueModule],
   controllers: [HealthController, TenantsController, UsersController, ServicePointsController],
   providers: [
     EchoGateway,

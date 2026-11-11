@@ -7,6 +7,13 @@ export type ErrorCode =
   | 'VALIDATION_FAILED'
   | 'CONFLICT'
   | 'TOO_MANY_ATTEMPTS'
+  | 'IDEMPOTENCY_KEY_REQUIRED'
+  | 'IDEMPOTENCY_KEY_REUSED'
+  | 'QUEUE_EMPTY'
+  | 'INVALID_TRANSITION'
+  | 'CONSENT_REQUIRED'
+  | 'QUEUE_FULL'
+  | 'SERVICE_POINT_INACTIVE'
   | 'INTERNAL_ERROR';
 
 /** Business/API error that renders as `{ error: { code, message, details } }` (conventions.md). */

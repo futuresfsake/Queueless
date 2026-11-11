@@ -87,3 +87,12 @@ Guest token validity: a ticket token works until 24 h after the ticket reaches a
 - `POST /service-points`, `PATCH /service-points/:id` (CLINIC_ADMIN); `GET /service-points` (CLINIC_ADMIN, STAFF). `maxWaiting` defaults to 200.
 - Default deny: every route needs `@Public()` or `@Roles(...)`; otherwise `403`. `/health` is public.
 - Unknown JSON keys in bodies are dropped, so `role` / `tenantId` in a request body never take effect.
+
+## Implemented in M1 (2026-11-10)
+- `GET /queue/:servicePointId` (STAFF, CLINIC_ADMIN) -> `{ servicePointId, queueDate, tickets[] }`: today's WAITING/CALLED/SERVING tickets in order. No phone, no guest token.
+- `POST /queue/:servicePointId/tickets` (staff walk-in) body `{ patientName, phone?, consent: true }` -> `201 { ticket, accessToken }`. Missing/false consent -> `400 CONSENT_REQUIRED` and nothing is stored. `phone` is digits with an optional leading `+`, 7-15 digits. `409 QUEUE_FULL`, `409 SERVICE_POINT_INACTIVE`.
+- `POST /queue/:servicePointId/call-next` -> `200 { ticket }` or `409 QUEUE_EMPTY`.
+- `POST /tickets/:id/{start|complete|no-show|skip|cancel}` -> `200 { ticket }`, or `409 INVALID_TRANSITION`. The ticket id alone identifies the service point (no extra header). A ticket in another clinic is `404`.
+- All of the above need `Idempotency-Key` (max 200 chars). A replay returns the stored body; the HTTP status is the route's own (201 for ticket issue, 200 for the rest).
+- `request_hash` = SHA-256 of `METHOD path` + canonical JSON body (keys sorted).
+- Public endpoints (`/public/...`), patient cancel and booking are M3.

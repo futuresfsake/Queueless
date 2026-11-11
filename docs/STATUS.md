@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-06
+Last updated: 2026-11-10
 
 Update this at the end of every work session. Latest session log: [sessions/2026-11-05.md](sessions/2026-11-05.md) (uses the old milestone numbering; see mapping in [milestones](plan/milestones.md)).
 
@@ -8,7 +8,7 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 **Complete (v1.2).** Milestones restructured on 2026-11-06 so M0 is the foundation (see [CHANGELOG](CHANGELOG.md), D-32). All open questions are resolved in [decisions-log](product/decisions-log.md) (D-1..D-32). Edit a doc only with a dated change or a new ADR.
 
 ## Current milestone
-**M0 Foundation** — F1, F2, F4, F5 done. F6 deploy code is ready and rehearsed locally; **waiting on Railway + Vercel accounts** to run the real deploy (F3 rest). Gate: end of Nov 7.
+**M1 Queue core** — backend done and tested (see Done). M0 is **not fully closed**: F6 real deploy (Railway + Vercel) is still waiting on accounts. Note the plan dates are behind: the schedule said M1 on Nov 8, today is Nov 10, so M2 (real-time + staff UI), M3 and M4 (the proof) are all still ahead with 4 working days to the Nov 13 freeze.
 
 ## Done
 - F1: docs v1.1 + v1.2 restructure
@@ -18,10 +18,13 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 
 - F6 prepared (not deployed): migration runner with A-6 safety guard, Dockerfile (non-root) + `railway.toml`, Socket.IO echo gateway, web hello page (API health + WebSocket check), `vercel.json`, CI builds the image, runbook "First deploy". Rehearsed: image built and run in production mode against an empty DB (provision, migrate, guard, health, WebSocket echo, CORS allow/deny); guard verified to stop the container when `DATABASE_URL` is the owner.
 
+- M1 queue core (API): issue ticket (staff walk-in), `call-next` (`FOR UPDATE SKIP LOCKED`), start/complete/no-show/skip/cancel, append-only events, idempotency (service inside the request transaction), staff queue view. State machine is pure data (`ticket-state-machine.ts`) with a table-driven unit test. Raw SQL is in `apps/api/src/db/sql/queue.sql.ts`. Verified: lint, build, 18 unit and 81 integration tests green (34 new in `queue.int.spec.ts`). Mutation-checked: removing `SKIP LOCKED` (caught only by the deterministic lock-overlap test, not by the parallel-HTTP test), the status guard, or the idempotency claim each fails tests. Not yet committed.
+
 ## Next
-1. **You:** create Railway + Vercel accounts and follow `docs/ops/deployment-runbook.md` "First deploy" (or tell me where you get stuck). Then F3 rest: k6, branch protection, SMS lead-time items
-2. F6: run the real deploy and tick the gate checklist
-3. Then M1 Queue core (Nov 8) per [milestones](plan/milestones.md)
+1. Commit M1 (not committed yet; ask-first rule) and push so CI runs the new integration tests
+2. M2: Socket.IO rooms with socket auth, emit **after commit** (events are written in the request transaction, so emitting from inside `applyTransition` would announce changes that could still roll back), shadcn/ui init, staff screen with Call next, login page
+3. M3 (public ticket page, TV, booking with `FOR UPDATE`, seed) then M4 (k6 + auditor): do not cut M4
+4. **You:** Railway + Vercel accounts and `docs/ops/deployment-runbook.md` "First deploy" (F6 gate is overdue; fallback in risks-and-cuts R4/R9)
 
 ## Blockers
 - ~~Docker not running~~ — resolved 2026-11-06: Postgres 16 up on host port 5434; migrations applied locally.
@@ -33,4 +36,4 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 - Nov 15: verify SMS gateway inbound (D-20)
 
 ## Days left to Nov 14
-8 (Nov 13 is buffer; Nov 14 is submission only)
+4 to the Nov 13 freeze (Nov 10 to Nov 13); Nov 14 is submission only

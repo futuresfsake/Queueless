@@ -2,6 +2,12 @@
 
 Docs are edited only with a dated entry here (or a new ADR).
 
+## v1.2.1 — 2026-11-10 — M1 implementation notes
+No product decisions changed. Docs updated to match the built code:
+- `api.md`: M1 endpoints, `CONSENT_REQUIRED` behaviour, idempotency key limits and request hash. `POST /tickets/:id/:action` takes no service-point header (the ticket id identifies it).
+- `implementation-plan.md`: M1 ticked off; idempotency is a service called inside the request transaction rather than a NestJS interceptor (an interceptor runs outside the transaction, which would break ADR-004's atomicity).
+- `STATUS.md`: schedule is behind the plan (M1 finished Nov 10, not Nov 8).
+
 ## v1.2 — 2026-11-06 — Milestone restructure (foundation first)
 Product-owner feedback: M0 should be the foundation (auth, database, third-party tools), not just docs.
 
