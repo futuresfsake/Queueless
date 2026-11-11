@@ -8,6 +8,7 @@ import { lockNextWaitingTicket, lockSlot, nextTicketSeq } from '../db/sql/queue.
 import { TenantPrisma, Tx } from '../db/tenant-prisma.service';
 import { EventsService } from './events.service';
 import { IdempotencyService } from './idempotency.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { TransitionEvent, TRANSITIONS } from './ticket-state-machine';
 
 const CONSENT_TEXT_VERSION = 'v1';
@@ -46,6 +47,7 @@ export class QueueService {
     private readonly events: EventsService,
     private readonly idempotency: IdempotencyService,
     private readonly clock: Clock,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   /** US-9: today's active tickets for one service point, in queue order. */
@@ -73,7 +75,9 @@ export class QueueService {
     // Checked before anything is written: no consent, no data stored (Data Privacy Act).
     if (body.consent !== true) throw new AppError(400, 'CONSENT_REQUIRED', 'Consent is required to join the queue');
 
-    return this.tenantPrisma.run(tenantId, (tx) =>
+    return this.afterCommit(
+      tenantId,
+      this.tenantPrisma.run(tenantId, (tx) =>
       this.idempotency.run(
         tx,
         {
@@ -129,6 +133,7 @@ export class QueueService {
           return { ticket: staffTicket(ticket), accessToken: ticket.accessToken };
         },
       ),
+    ),
     );
   }
 
@@ -139,7 +144,9 @@ export class QueueService {
     actorUserId: string,
     idempotencyKey: string | undefined,
   ): Promise<{ ticket: StaffTicket }> {
-    return this.tenantPrisma.run(tenantId, (tx) =>
+    return this.afterCommit(
+      tenantId,
+      this.tenantPrisma.run(tenantId, (tx) =>
       this.idempotency.run(
         tx,
         {
@@ -160,6 +167,7 @@ export class QueueService {
           };
         },
       ),
+    ),
     );
   }
 
@@ -171,7 +179,9 @@ export class QueueService {
     actorUserId: string,
     idempotencyKey: string | undefined,
   ): Promise<{ ticket: StaffTicket }> {
-    return this.tenantPrisma.run(tenantId, (tx) =>
+    return this.afterCommit(
+      tenantId,
+      this.tenantPrisma.run(tenantId, (tx) =>
       this.idempotency.run(
         tx,
         {
@@ -195,6 +205,7 @@ export class QueueService {
           };
         },
       ),
+    ),
     );
   }
 
@@ -251,6 +262,20 @@ export class QueueService {
       payload: { number: ticket.number },
     });
     return staffTicket(ticket);
+  }
+
+  /**
+   * Push "queue changed" to staff sockets only AFTER the transaction committed. Emitting inside
+   * the transaction would announce changes that could still roll back. Idempotent replays emit
+   * too (harmless: clients just refetch).
+   */
+  private async afterCommit<T extends { ticket: { servicePointId: string } }>(
+    tenantId: string,
+    work: Promise<T>,
+  ): Promise<T> {
+    const result = await work;
+    this.realtime.emitQueueChanged(tenantId, result.ticket.servicePointId);
+    return result;
   }
 
   /** Clinic-local day (D-6): ticket numbers reset daily and the queue only shows today. */

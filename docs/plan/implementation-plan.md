@@ -69,8 +69,8 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [ ] Not in M1 (later milestones): T-12 already done (F4); T-18 purge (P1), T-23 booking/cancel slot release (M3; the slot-release path in `applyTransition` is written but untested until booking exists)
 
 ## M2 Real-time + Staff UI (Nov 9)
-- [ ] Socket.IO gateway, rooms, auth for sockets
-- [ ] Emit after commit
+- [x] Socket.IO gateway, rooms, auth for sockets (`realtime.gateway.ts`: JWT checked in a Socket.IO middleware, room per tenant + service point, signal-only `queue.changed`; tests in `test/realtime.int.spec.ts`)
+- [x] Emit after commit (`QueueService.afterCommit`; no emit when the request fails)
 - [ ] shadcn/ui init (D-13)
 - [ ] Staff screen: queue lists, Call next (Space shortcut), actions
 - [ ] TanStack Query + refetch on reconnect; reconnect banner
