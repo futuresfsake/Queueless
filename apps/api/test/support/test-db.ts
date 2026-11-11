@@ -17,6 +17,8 @@ export interface TestDb {
   tenantPrisma: TenantPrisma;
   /** Connection URL for the NON-OWNER app role (RLS applies). */
   appUrl: string;
+  /** Connection URL for the superuser (only for proving that the security audit fails when it should). */
+  superUrl: string;
   /** Superuser connection, for deliberately corrupting data or inspecting state. Never use it to test RLS. */
   superUser: () => Promise<Client>;
   stop: () => Promise<void>;
@@ -56,6 +58,7 @@ export async function startTestDb(): Promise<TestDb> {
     prisma,
     tenantPrisma: new TenantPrisma(prisma),
     appUrl,
+    superUrl,
     superUser: async () => {
       const c = new Client({ connectionString: superUrl });
       await c.connect();

@@ -9,6 +9,7 @@
     "db:setup": "node --env-file=../../.env -r ts-node/register/transpile-only src/scripts/migrate.ts",
     "seed:super-admin": "tsx --env-file=../../.env src/scripts/seed-super-admin.ts",
     "seed:demo": "tsx --env-file=../../.env src/scripts/seed-demo.ts",
+    "audit": "tsx --env-file=../../.env src/scripts/audit.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "jest --passWithNoTests",

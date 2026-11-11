@@ -90,7 +90,7 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [x] k6: call-next latency p95 (record real numbers only) (in validation-results, local run)
 - [ ] CI runs Jest + Testcontainers; k6 runs in CI against compose stack
 - [ ] Projection rebuild test (replay events == tickets.status)
-- [ ] Invariant auditor: `AuditService` (A-1..A-8), `audit_runs`, `/admin/audit`, CLI `pnpm --filter api audit`, CI step after k6 (US-33, T-21) — cut rule: CLI + CI only
+- [x] Invariant auditor (CLI only, per the cut rule): `AuditService` A-1..A-8 as pure SQL, `pnpm --filter @queueless/api audit` (exit 1 on failure), results stored in `audit_runs`; T-21 in `test/audit.int.spec.ts` (clean data passes; each check fails with its own ID on corrupted data). Not built: `/admin/audit` endpoint and UI; CI step (needs the compose stack, see below)
 - [ ] Abuse protection: `max_waiting`, per-IP join cap, guest-token expiry (US-36, T-24..T-26); login throttle already in F5
 - [ ] Fill README validation table with real results
 
