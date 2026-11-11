@@ -13,6 +13,8 @@ export type ErrorCode =
   | 'INVALID_TRANSITION'
   | 'CONSENT_REQUIRED'
   | 'QUEUE_FULL'
+  | 'SLOT_FULL'
+  | 'RATE_LIMITED'
   | 'SERVICE_POINT_INACTIVE'
   | 'INTERNAL_ERROR';
 

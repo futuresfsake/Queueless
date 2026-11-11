@@ -13,9 +13,11 @@ import { z } from "zod";
 import { AuthService } from "../auth/auth.service";
 import type { JwtPayload, RequestUser } from "../auth/auth.types";
 import { Public } from "../auth/decorators";
+import { PrismaService } from '../db/prisma.service';
 import { TenantPrisma } from "../db/tenant-prisma.service";
 
 const SubscribeBody = z.object({ servicePointId: z.string().uuid() });
+const SubscribePublicBody = z.object({ slug: z.string().min(1).max(60), code: z.string().min(1).max(40) });
 
 export const QUEUE_CHANGED = "queue.changed";
 export const roomFor = (tenantId: string, servicePointId: string) =>
@@ -45,6 +47,7 @@ export class RealtimeGateway implements OnGatewayInit {
     private readonly jwt: JwtService,
     private readonly auth: AuthService,
     private readonly tenantPrisma: TenantPrisma,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -55,7 +58,10 @@ export class RealtimeGateway implements OnGatewayInit {
     server.use(async (client, next) => {
       try {
         const token = client.handshake.auth?.token;
-        if (typeof token !== 'string' || !token) throw new Error('no token');
+        // No token = anonymous patient / TV: allowed to connect, but only `subscribe.public` works.
+        // A token that is present must be valid.
+        if (token === undefined || token === null || token === '') return next();
+        if (typeof token !== 'string') throw new Error('bad token');
         const payload = await this.jwt.verifyAsync<JwtPayload>(token, { algorithms: ['HS256'] });
         const user = await this.auth.resolveUser(payload);
         if (!user) throw new Error('inactive user');
@@ -88,6 +94,27 @@ export class RealtimeGateway implements OnGatewayInit {
     );
     if (!point) return { ok: false, code: "NOT_FOUND" };
     await client.join(roomFor(tenantId, servicePointId));
+    return { ok: true };
+  }
+
+  /**
+   * Patient page and TV: join the room of one active service point by clinic slug and code. The
+   * room only ever carries the same "changed" signal; the data comes from the public HTTP routes.
+   */
+  @SubscribeMessage('subscribe.public')
+  async subscribePublic(@ConnectedSocket() client: Socket, @MessageBody() body: unknown) {
+    const parsed = SubscribePublicBody.safeParse(body);
+    if (!parsed.success) return { ok: false, code: 'VALIDATION_ERROR' };
+    const tenant = await this.prisma.tenant.findUnique({ where: { slug: parsed.data.slug } });
+    if (!tenant || !tenant.isActive) return { ok: false, code: 'NOT_FOUND' };
+    const point = await this.tenantPrisma.run(tenant.id, (tx) =>
+      tx.servicePoint.findFirst({
+        where: { tenantId: tenant.id, code: parsed.data.code, isActive: true },
+        select: { id: true },
+      }),
+    );
+    if (!point) return { ok: false, code: 'NOT_FOUND' };
+    await client.join(roomFor(tenant.id, point.id));
     return { ok: true };
   }
 

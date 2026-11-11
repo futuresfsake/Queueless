@@ -96,3 +96,9 @@ Guest token validity: a ticket token works until 24 h after the ticket reaches a
 - All of the above need `Idempotency-Key` (max 200 chars). A replay returns the stored body; the HTTP status is the route's own (201 for ticket issue, 200 for the rest).
 - `request_hash` = SHA-256 of `METHOD path` + canonical JSON body (keys sorted).
 - Public endpoints (`/public/...`), patient cancel and booking are M3.
+
+## Implemented in M3a (2026-11-12)
+- `POST/GET /slots` (CLINIC_ADMIN): body `{ servicePointId, startsAt (ISO with offset), capacity }`.
+- Public routes, no login (all under `/public`): `GET c/:slug/service-points`; `POST c/:slug/service-points/:code/tickets` (Idempotency-Key required); `GET c/:slug/service-points/:code/slots?date=`; `POST c/:slug/slots/:slotId/book` (Idempotency-Key required; only today's slots; `409 SLOT_FULL`); `GET c/:slug/service-points/:code/display` (numbers only; **changed from `display/:servicePointId`**: a public caller does not know the internal id, and the slug plus code resolves the tenant without a login); `GET t/:token` (status, `peopleAhead`, `nowServing`; no phone); `POST t/:token/cancel`.
+- Public writes (join, book, cancel) are limited per IP: `429 RATE_LIMITED` after `PUBLIC_WRITE_LIMIT` (default 30) per minute (US-36). In-memory, single server (ADR-005).
+- Sockets: `subscribe` (staff, `{ servicePointId }`) and `subscribe.public` (anonymous, `{ slug, code }`) join the same room; the server emits only `queue.changed { servicePointId }` after commit (D-15). This replaces the `queue.updated` / `ticket.updated` / `join.*` design above.

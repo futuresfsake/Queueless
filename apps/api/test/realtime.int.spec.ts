@@ -85,11 +85,31 @@ afterAll(async () => {
 });
 
 describe('M2 staff real-time channel', () => {
-  it('rejects a connection with no token or a bad token', async () => {
-    for (const token of [undefined, 'not-a-jwt']) {
-      const s = connect(token);
-      await expect(connected(s)).rejects.toThrow('UNAUTHORIZED');
-    }
+  it('rejects a connection with a bad token', async () => {
+    await expect(connected(connect('not-a-jwt'))).rejects.toThrow('UNAUTHORIZED');
+  });
+
+  it('an anonymous socket connects but cannot use the staff subscribe', async () => {
+    const s = connect(undefined);
+    await connected(s);
+    expect(await subscribe(s, a.sp)).toEqual({ ok: false, code: 'FORBIDDEN' });
+  });
+
+  it('an anonymous socket can follow a public queue by slug and code and gets the signal', async () => {
+    const s = connect(undefined);
+    await connected(s);
+    const ack = await new Promise((r) => s.emit('subscribe.public', { slug: 'rt-b', code: 'desk' }, r));
+    expect(ack).toEqual({ ok: true });
+    const changed = nextEvent(s);
+    await t.http
+      .post(`/api/v1/queue/${b.sp}/tickets`)
+      .set(bearer(b.staff))
+      .set('Idempotency-Key', randomUUID())
+      .send({ patientName: 'Pub', consent: true })
+      .expect(201);
+    expect(await changed).toEqual({ servicePointId: b.sp });
+    const other = await new Promise((r) => s.emit('subscribe.public', { slug: 'nope', code: 'desk' }, r));
+    expect(other).toEqual({ ok: false, code: 'NOT_FOUND' });
   });
 
   it('pushes queue.changed to a subscribed staff socket after a ticket is issued and after call-next', async () => {

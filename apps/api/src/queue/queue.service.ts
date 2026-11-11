@@ -93,47 +93,116 @@ export class QueueService {
           if (!point) throw notFound('Service point');
           if (!point.isActive) throw new AppError(409, 'SERVICE_POINT_INACTIVE', 'This queue is closed');
 
-          const { iso, asDate } = this.queueDate();
-          // Take the number FIRST. The counter upsert locks the counter row until commit, so
-          // issuers for this service point run one at a time from here on, and the max_waiting
-          // count below cannot be passed by two concurrent joins. If we then throw QUEUE_FULL,
-          // the rollback also gives the number back (no gap).
-          const seq = await nextTicketSeq(tx, tenantId, servicePointId, iso);
-
-          const waiting = await tx.ticket.count({
-            where: { tenantId, servicePointId, queueDate: asDate, status: 'WAITING' },
-          });
-          if (waiting >= point.maxWaiting) throw new AppError(409, 'QUEUE_FULL', 'This queue is full');
-
-          const ticket = await tx.ticket.create({
-            data: {
-              tenantId,
-              servicePointId,
-              queueDate: asDate,
-              seq,
-              number: `${point.prefix}-${String(seq).padStart(3, '0')}`, // D-6
-              patientName: body.patientName,
-              phone: body.phone,
-              accessToken: randomBytes(32).toString('base64url'), // 256-bit, unguessable guest link
-              issuedAt: this.clock.now(), // drives the 30-day purge (INV-9), so it comes from Clock (D-19)
-            },
-          });
-          await tx.consent.create({
-            data: { tenantId, ticketId: ticket.id, textVersion: CONSENT_TEXT_VERSION, acceptedAt: this.clock.now() },
-          });
-          await this.events.append(tx, {
-            tenantId,
-            servicePointId,
-            ticketId: ticket.id,
-            type: 'TICKET_ISSUED',
-            actorKind: actor.kind,
-            actorUserId: actor.kind === 'STAFF' ? actor.userId : undefined,
-            payload: { number: ticket.number },
-          });
-          return { ticket: staffTicket(ticket), accessToken: ticket.accessToken };
+          return this.createTicket(tx, tenantId, point, body, actor);
         },
       ),
     ),
+    );
+  }
+
+  /**
+   * One ticket: counter, ticket, consent, event. Runs in the caller's transaction. Shared by staff
+   * walk-ins, patient join and slot booking so the rules (max_waiting, consent, numbering) cannot drift.
+   */
+  private async createTicket(
+    tx: Tx,
+    tenantId: string,
+    point: { id: string; prefix: string; maxWaiting: number },
+    body: JoinQueueBody,
+    actor: Actor,
+    slotId?: string,
+  ): Promise<{ ticket: StaffTicket; accessToken: string }> {
+    const servicePointId = point.id;
+    const { iso, asDate } = this.queueDate();
+    // Take the number FIRST. The counter upsert locks the counter row until commit, so
+    // issuers for this service point run one at a time from here on, and the max_waiting
+    // count below cannot be passed by two concurrent joins. If we then throw QUEUE_FULL,
+    // the rollback also gives the number back (no gap).
+    const seq = await nextTicketSeq(tx, tenantId, servicePointId, iso);
+
+    const waiting = await tx.ticket.count({
+      where: { tenantId, servicePointId, queueDate: asDate, status: 'WAITING' },
+    });
+    if (waiting >= point.maxWaiting) throw new AppError(409, 'QUEUE_FULL', 'This queue is full');
+
+    const ticket = await tx.ticket.create({
+      data: {
+        tenantId,
+        servicePointId,
+        queueDate: asDate,
+        seq,
+        number: `${point.prefix}-${String(seq).padStart(3, '0')}`, // D-6
+        slotId,
+        patientName: body.patientName,
+        phone: body.phone,
+        accessToken: randomBytes(32).toString('base64url'), // 256-bit, unguessable guest link
+        issuedAt: this.clock.now(), // drives the 30-day purge (INV-9), so it comes from Clock (D-19)
+      },
+    });
+    await tx.consent.create({
+      data: { tenantId, ticketId: ticket.id, textVersion: CONSENT_TEXT_VERSION, acceptedAt: this.clock.now() },
+    });
+    await this.events.append(tx, {
+      tenantId,
+      servicePointId,
+      ticketId: ticket.id,
+      type: 'TICKET_ISSUED',
+      actorKind: actor.kind,
+      actorUserId: actor.kind === 'STAFF' ? actor.userId : undefined,
+      payload: { number: ticket.number },
+    });
+    return { ticket: staffTicket(ticket), accessToken: ticket.accessToken };
+  }
+
+  /**
+   * US-8 / INV-5: book a slot. The slot row is locked FOR UPDATE first (D-29: slot lock before the
+   * counter and ticket locks, the same order cancel uses), so 200 concurrent bookings of the last
+   * place serialize and exactly one succeeds. The booking becomes a normal WAITING ticket (D-10:
+   * FIFO, slot time is informational). Only today's slots can be booked in the MVP.
+   */
+  bookSlot(
+    tenantId: string,
+    slotId: string,
+    body: JoinQueueBody,
+    idempotencyKey: string | undefined,
+  ): Promise<{ ticket: StaffTicket; accessToken: string }> {
+    if (body.consent !== true) throw new AppError(400, 'CONSENT_REQUIRED', 'Consent is required to book');
+    return this.afterCommit(
+      tenantId,
+      this.tenantPrisma.run(tenantId, (tx) =>
+        this.idempotency.run(
+          tx,
+          { tenantId, key: idempotencyKey, method: 'POST', route: '/slots/:slotId/book', path: `/slots/${slotId}/book`, body },
+          async () => {
+            await lockSlot(tx, tenantId, slotId);
+            const slot = await tx.slot.findFirst({ where: { id: slotId, tenantId }, include: { servicePoint: true } });
+            if (!slot) throw notFound('Slot');
+            if (!slot.servicePoint.isActive) throw new AppError(409, 'SERVICE_POINT_INACTIVE', 'This queue is closed');
+            if (this.clock.localDate(undefined, slot.startsAt) !== this.clock.localDate()) {
+              throw new AppError(400, 'VALIDATION_FAILED', 'Only slots for today can be booked');
+            }
+            if (slot.bookedCount >= slot.capacity) throw new AppError(409, 'SLOT_FULL', 'This slot is full');
+            const created = await this.createTicket(tx, tenantId, slot.servicePoint, body, { kind: 'PATIENT' }, slot.id);
+            await tx.slot.update({ where: { id: slot.id }, data: { bookedCount: { increment: 1 } } });
+            return created;
+          },
+        ),
+      ),
+    );
+  }
+
+  /** US-7: the patient cancels with their guest token. Releases a held slot (D-29). */
+  patientCancel(tenantId: string, ticketId: string): Promise<{ ticket: StaffTicket }> {
+    return this.afterCommit(
+      tenantId,
+      this.tenantPrisma.run(tenantId, async (tx) => {
+        const current = await tx.ticket.findFirst({
+          where: { id: ticketId, tenantId },
+          select: { id: true, slotId: true },
+        });
+        if (!current) throw notFound('Ticket');
+        return { ticket: await this.applyTransition(tx, tenantId, current, 'CANCELLED', { kind: 'PATIENT' }) };
+      }),
     );
   }
 

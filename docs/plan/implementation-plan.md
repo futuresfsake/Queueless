@@ -77,10 +77,10 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [x] Login page, route guard by role (UI only; the API enforces permissions)
 
 ## M3 Patient + TV + Booking (Nov 10)
-- [ ] Public endpoints and rate limiting
+- [x] Public endpoints and rate limiting (backend; `test/public.int.spec.ts`)
 - [ ] Join queue page, My ticket page (live), cancel
 - [ ] TV page
-- [ ] Slots CRUD + booking with `FOR UPDATE`; cancellation releases the slot (D-29, T-23)
+- [x] Slots create/list + booking with `FOR UPDATE`; cancellation releases the slot (D-29, T-23); 25 concurrent bookings of one place -> exactly 1 succeeds (INV-5, Jest; the k6 version is M4)
 - [ ] Seed script (demo tenant, accounts, service points, slots)
 - [ ] Phone purge job (`@nestjs/schedule`) — P1
 

@@ -12,11 +12,13 @@ import { TenantsService } from './tenants/tenants.service';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
 import { QueueModule } from './queue/queue.module';
+import { PublicModule } from './public/public.module';
+import { SlotsController } from './slots/slots.controller';
 import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
-  imports: [DbModule, AuthModule, RealtimeModule, QueueModule],
-  controllers: [HealthController, TenantsController, UsersController, ServicePointsController],
+  imports: [DbModule, AuthModule, RealtimeModule, QueueModule, PublicModule],
+  controllers: [HealthController, TenantsController, UsersController, ServicePointsController, SlotsController],
   providers: [
     EchoGateway,
     TenantsService,

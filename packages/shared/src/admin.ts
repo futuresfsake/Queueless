@@ -62,3 +62,11 @@ export const UpdateServicePointBody = z
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'nothing to update');
 export type UpdateServicePointBody = z.infer<typeof UpdateServicePointBody>;
+
+// US-8: a bookable time slot at a service point.
+export const CreateSlotBody = z.object({
+  servicePointId: z.string().uuid(),
+  startsAt: z.string().datetime({ offset: true }),
+  capacity: z.number().int().min(1).max(500),
+});
+export type CreateSlotBody = z.infer<typeof CreateSlotBody>;
