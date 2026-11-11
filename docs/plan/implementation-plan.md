@@ -85,9 +85,9 @@ Ordered tasks per milestone. Check boxes as done; keep in sync with [milestones]
 - [ ] Phone purge job (`@nestjs/schedule`) — P1
 
 ## M4 Proof (Nov 11)
-- [ ] k6: 200 concurrent bookings, 1 slot → exactly 1 success
-- [ ] k6: 3 concurrent call-next → 3 distinct tickets
-- [ ] k6: call-next latency p95 (record real numbers only)
+- [x] k6: 200 concurrent bookings, 1 slot → exactly 1 success (`k6/booking-race.js`, 2026-11-12, local run)
+- [x] k6: 3 concurrent call-next → 3 distinct tickets (`k6/call-next.js`, 90 calls, 3 desks)
+- [x] k6: call-next latency p95 (record real numbers only) (in validation-results, local run)
 - [ ] CI runs Jest + Testcontainers; k6 runs in CI against compose stack
 - [ ] Projection rebuild test (replay events == tickets.status)
 - [ ] Invariant auditor: `AuditService` (A-1..A-8), `audit_runs`, `/admin/audit`, CLI `pnpm --filter api audit`, CI step after k6 (US-33, T-21) — cut rule: CLI + CI only
