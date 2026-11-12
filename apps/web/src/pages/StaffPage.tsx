@@ -1,17 +1,18 @@
 import type { TicketAction, TicketStatus } from '@queueless/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCircle2, Clock, Phone, UserPlus, Wifi, WifiOff } from 'lucide-react';
+import { Bell, WifiOff } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useAuth } from '../auth/auth-store';
 import { Alert, EmptyState, Skeleton } from '../components/feedback';
 import { AppShell, PageHeader } from '../components/shell';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input, Select } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { api, ApiError } from '../lib/api';
 import { useQueueSocket } from '../lib/useQueueSocket';
+import { cn } from '../lib/utils';
 import { t } from '../strings';
 
 interface ServicePoint {
@@ -120,7 +121,6 @@ export function StaffPage() {
     <AppShell>
       <PageHeader
         title={t.staff.title}
-        description={t.staff.subtitle}
         actions={
           active.length > 0 && (
             <>
@@ -168,20 +168,17 @@ export function StaffPage() {
 
       {active.length > 0 && (
         <>
-          <dl className="mb-6 grid grid-cols-3 gap-3">
+          <dl className="mb-5 flex flex-wrap gap-x-8 gap-y-1">
             <Stat label={t.staff.waitingCount} value={loading ? null : waiting.length} />
             <Stat label={t.staff.atDeskCount} value={loading ? null : atDesk.length} />
             <Stat label={t.staff.longestWait} value={loading ? null : waiting.length ? `${longest} min` : '-'} />
           </dl>
 
-          <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
-            <div className="grid gap-6">
+          <div className="grid items-start gap-5 lg:grid-cols-[1fr_19rem]">
+            <div className="grid gap-5">
               <Card>
                 <CardHeader>
-                  <div>
-                    <CardTitle>{t.staff.atDesk}</CardTitle>
-                    <CardDescription>{t.staff.atDeskHint}</CardDescription>
-                  </div>
+                  <CardTitle>{t.staff.atDesk}</CardTitle>
                 </CardHeader>
                 {loading ? (
                   <RowsSkeleton />
@@ -190,27 +187,23 @@ export function StaffPage() {
                 ) : (
                   <ul>
                     {atDesk.map((x) => (
-                      <Row key={x.id} ticket={x}>
+                      <Row key={x.id} ticket={x} large>
                         {x.status === 'CALLED' ? (
                           <>
-                            <Badge tone="brand">
-                              <Bell /> {t.staff.statusCalled}
-                            </Badge>
+                            <Badge tone="brand">{t.staff.statusCalled}</Badge>
                             <Button size="sm" variant="primary" onClick={() => run(x.id, 'start')}>
                               {t.staff.start}
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => run(x.id, 'no-show')}>
+                            <Button size="sm" variant="secondary" onClick={() => run(x.id, 'no-show')}>
                               {t.staff.noShow}
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => run(x.id, 'skip')}>
+                            <Button size="sm" variant="secondary" onClick={() => run(x.id, 'skip')}>
                               {t.staff.skip}
                             </Button>
                           </>
                         ) : (
                           <>
-                            <Badge tone="ok">
-                              <CheckCircle2 /> {t.staff.statusServing}
-                            </Badge>
+                            <Badge tone="ok">{t.staff.statusServing}</Badge>
                             <Button size="sm" variant="primary" onClick={() => run(x.id, 'complete')}>
                               {t.staff.complete}
                             </Button>
@@ -224,29 +217,37 @@ export function StaffPage() {
 
               <Card>
                 <CardHeader>
-                  <div>
-                    <CardTitle>{t.staff.waiting}</CardTitle>
-                    <CardDescription>{t.staff.waitingHint}</CardDescription>
-                  </div>
+                  <CardTitle>{t.staff.waiting}</CardTitle>
+                  <span className="text-xs text-text-3">{t.staff.waitingHint}</span>
                 </CardHeader>
                 {loading ? (
                   <RowsSkeleton />
                 ) : waiting.length === 0 ? (
                   <EmptyState title={t.staff.waitingEmpty}>{t.staff.waitingEmptyHint}</EmptyState>
                 ) : (
-                  <ul>
-                    {waiting.map((x, i) => (
-                      <Row key={x.id} ticket={x} position={i + 1}>
-                        <span className="flex items-center gap-1.5 text-[0.8125rem] text-text-2">
-                          <Clock className="size-3.5" />
-                          {minutesSince(x.issuedAt, now)} min
-                        </span>
-                        <Button size="sm" variant="ghost" onClick={() => run(x.id, 'cancel')}>
-                          {t.staff.cancel}
-                        </Button>
-                      </Row>
-                    ))}
-                  </ul>
+                  <>
+                    <div aria-hidden="true" className="caption hidden items-center gap-x-4 border-b border-line bg-subtle px-4 py-2 sm:flex">
+                      <span className="w-6">#</span>
+                      <span className="w-[5.5rem]">{t.staff.colNumber}</span>
+                      <span className="flex-1">{t.staff.colName}</span>
+                      <span className="w-16 text-right">{t.staff.colWaited}</span>
+                      <span className="w-[4.5rem]" />
+                    </div>
+                    <ul>
+                      {waiting.map((x, i) => (
+                        <Row key={x.id} ticket={x} position={i + 1}>
+                          <span className="w-16 text-right text-[0.8125rem] tabular-nums text-text-2">
+                            {minutesSince(x.issuedAt, now)} min
+                          </span>
+                          <span className="flex w-[4.5rem] justify-end">
+                            <Button size="sm" variant="ghost" onClick={() => run(x.id, 'cancel')}>
+                              {t.staff.cancel}
+                            </Button>
+                          </span>
+                        </Row>
+                      ))}
+                    </ul>
+                  </>
                 )}
               </Card>
             </div>
@@ -261,11 +262,10 @@ export function StaffPage() {
 
 function LiveBadge({ connected }: { connected: boolean }) {
   return connected ? (
-    <Badge tone="ok">
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok">
       <span className="pulse-dot size-1.5 rounded-full bg-ok" />
-      <Wifi className="hidden" />
       {t.staff.live}
-    </Badge>
+    </span>
   ) : (
     <Badge tone="warn">
       <WifiOff />
@@ -276,18 +276,16 @@ function LiveBadge({ connected }: { connected: boolean }) {
 
 function Stat({ label, value }: { label: string; value: string | number | null }) {
   return (
-    <div className="rounded-lg border border-line bg-surface px-4 py-3 shadow-card">
-      <dt className="text-xs font-medium text-text-2">{label}</dt>
-      <dd className="mt-1 text-2xl font-semibold tabular-nums leading-none">
-        {value === null ? <Skeleton className="h-6 w-10" /> : value}
-      </dd>
+    <div className="flex items-baseline gap-2">
+      <dt className="order-2 text-sm lowercase text-text-2">{label}</dt>
+      <dd className="text-xl font-semibold tabular-nums">{value === null ? <Skeleton className="h-5 w-8" /> : value}</dd>
     </div>
   );
 }
 
 function RowsSkeleton() {
   return (
-    <div className="space-y-3 p-5">
+    <div className="space-y-3 p-4">
       <Skeleton className="h-9" />
       <Skeleton className="h-9" />
     </div>
@@ -295,16 +293,19 @@ function RowsSkeleton() {
 }
 
 /** One patient: position (when queued), ticket number, name, then whatever actions apply. */
-function Row({ ticket, position, children }: { ticket: Ticket; position?: number; children: ReactNode }) {
+function Row({ ticket, position, large, children }: { ticket: Ticket; position?: number; large?: boolean; children: ReactNode }) {
   return (
     <li
       data-ticket={ticket.number}
-      className="fade-in flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-5 py-3 last:border-b-0"
+      className={cn(
+        'fade-in flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 last:border-b-0',
+        large ? 'py-4' : 'py-2',
+      )}
     >
-      {position !== undefined && <span className="w-5 text-[0.8125rem] tabular-nums text-text-3">{position}</span>}
-      <span className="ticket-no w-[4.5rem] text-lg">{ticket.number}</span>
-      <span className="min-w-0 flex-1 truncate text-sm">{ticket.patientName}</span>
-      <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{children}</div>
+      {position !== undefined && <span className="hidden w-6 text-[0.8125rem] tabular-nums text-text-3 sm:block">{position}</span>}
+      <span className={cn('ticket-no', large ? 'text-[1.75rem] leading-none' : 'w-[5.5rem] text-base')}>{ticket.number}</span>
+      <span className={cn('min-w-0 flex-1 truncate', large ? 'text-base' : 'text-sm')}>{ticket.patientName}</span>
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">{children}</div>
     </li>
   );
 }
@@ -349,11 +350,8 @@ function WalkIn({
     <Card className="lg:sticky lg:top-6">
       <CardHeader>
         <div>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="size-4 text-text-2" />
-            {t.staff.walkIn}
-          </CardTitle>
-          <CardDescription>{t.staff.walkInHint}</CardDescription>
+          <CardTitle>{t.staff.walkIn}</CardTitle>
+          <p className="mt-0.5 text-xs text-text-3">{t.staff.walkInHint}</p>
         </div>
       </CardHeader>
       <CardContent>
@@ -364,10 +362,7 @@ function WalkIn({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="pphone">{t.staff.phone}</Label>
-            <div className="relative">
-              <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-3" />
-              <Input id="pphone" inputMode="tel" className="pl-9" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            </div>
+            <Input id="pphone" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <label className="flex cursor-pointer items-start gap-2.5 text-[0.8125rem] leading-relaxed text-text-2">
             <input

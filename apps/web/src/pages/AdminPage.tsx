@@ -1,6 +1,6 @@
 import { SERVICE_ICONS } from '@queueless/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Copy, ExternalLink, Plus } from 'lucide-react';
+import { Check, Copy, ExternalLink } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useAuth } from '../auth/auth-store';
 import { Alert, EmptyState } from '../components/feedback';
@@ -8,7 +8,7 @@ import { ICONS, ServiceIcon } from '../components/service-icon';
 import { AppShell, PageHeader } from '../components/shell';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input, Select } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { api, ApiError } from '../lib/api';
@@ -69,7 +69,7 @@ export function AdminPage() {
 
   return (
     <AppShell>
-      <PageHeader title={t.admin.title} description={t.admin.subtitle} />
+      <PageHeader title={t.admin.title} />
 
       {slug && <PatientLink slug={slug} />}
 
@@ -92,14 +92,9 @@ export function AdminPage() {
       </div>
 
       {tab === 'services' && (
-        <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
+        <div className="grid items-start gap-5 lg:grid-cols-[1fr_21rem]">
           <Card>
-            <CardHeader>
-              <div>
-                <CardTitle>{t.admin.servicePoints}</CardTitle>
-                <CardDescription>{t.admin.servicePointsHint}</CardDescription>
-              </div>
-            </CardHeader>
+            <p className="border-b border-line bg-subtle px-4 py-2.5 text-[0.8125rem] text-text-2">{t.admin.servicePointsHint}</p>
             {(points.data ?? []).length === 0 ? (
               <EmptyState title={t.admin.noServices}>{t.admin.noServicesHint}</EmptyState>
             ) : (
@@ -115,14 +110,9 @@ export function AdminPage() {
       )}
 
       {tab === 'staff' && (
-        <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
+        <div className="grid items-start gap-5 lg:grid-cols-[1fr_21rem]">
           <Card>
-            <CardHeader>
-              <div>
-                <CardTitle>{t.admin.staff}</CardTitle>
-                <CardDescription>{t.admin.staffHint}</CardDescription>
-              </div>
-            </CardHeader>
+            <p className="border-b border-line bg-subtle px-4 py-2.5 text-[0.8125rem] text-text-2">{t.admin.staffHint}</p>
             <ul>
               {(users.data ?? []).map((u) => (
                 <StaffRow key={u.id} u={u} onDone={refresh} />
@@ -134,21 +124,16 @@ export function AdminPage() {
       )}
 
       {tab === 'slots' && (
-        <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
+        <div className="grid items-start gap-5 lg:grid-cols-[1fr_21rem]">
           <Card>
-            <CardHeader>
-              <div>
-                <CardTitle>{t.admin.slots}</CardTitle>
-                <CardDescription>{t.admin.slotsHint}</CardDescription>
-              </div>
-            </CardHeader>
+            <p className="border-b border-line bg-subtle px-4 py-2.5 text-[0.8125rem] text-text-2">{t.admin.slotsHint}</p>
             {(slots.data ?? []).length === 0 ? (
               <EmptyState title={t.admin.noSlots}>{t.admin.noSlotsHint}</EmptyState>
             ) : (
               <ul>
                 {(slots.data ?? []).slice(-14).map((s) => (
-                  <li key={s.id} className="flex items-center gap-4 border-b border-line px-5 py-3 last:border-b-0">
-                    <span className="w-16 text-base font-semibold tabular-nums">
+                  <li key={s.id} className="flex items-center gap-4 border-b border-line px-4 py-2.5 last:border-b-0">
+                    <span className="w-20 text-[0.9375rem] font-semibold tabular-nums">
                       {new Date(s.startsAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                     </span>
                     <span className="w-14 text-[0.8125rem] text-text-2">
@@ -183,18 +168,18 @@ function PatientLink({ slug }: { slug: string }) {
     }
   };
   return (
-    <Card className="mb-6">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4">
+    <Card className="mb-5">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">{t.admin.patientLink}</p>
-          <p className="mt-0.5 truncate font-mono text-[0.8125rem] text-text-2">{url}</p>
+          <p className="caption">{t.admin.patientLink}</p>
+          <p className="mt-1 truncate font-mono text-[0.8125rem] font-medium text-text">{url}</p>
         </div>
         <div className="flex gap-2">
           <Button size="sm" onClick={copy}>
             {copied ? <Check /> : <Copy />}
             {copied ? t.admin.copied : t.admin.copy}
           </Button>
-          <a href={`/c/${slug}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-[0.8125rem] font-medium shadow-card hover:bg-subtle">
+          <a href={`/c/${slug}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-[0.8125rem] font-medium hover:bg-subtle">
             <ExternalLink className="size-4" />
             {t.admin.open}
           </a>
@@ -210,10 +195,8 @@ function ServiceRow({ p, slug, onDone }: { p: ServicePoint; slug: string; onDone
     onSuccess: onDone,
   });
   return (
-    <li className="flex items-center gap-4 border-b border-line px-5 py-3.5 last:border-b-0">
-      <span className={cn('grid size-10 shrink-0 place-items-center rounded-md', p.isActive ? 'bg-brand-soft text-brand' : 'bg-subtle text-text-3')}>
-        <ServiceIcon name={p.icon} />
-      </span>
+    <li className="flex items-center gap-3.5 border-b border-line px-4 py-3 last:border-b-0">
+      <ServiceIcon name={p.icon} className={cn('size-5 shrink-0', p.isActive ? 'text-text-2' : 'text-text-3')} />
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-2 font-medium">
           <span className="truncate">{p.name}</span>
@@ -221,12 +204,12 @@ function ServiceRow({ p, slug, onDone }: { p: ServicePoint; slug: string; onDone
         </p>
         <p className="truncate text-[0.8125rem] text-text-2">{p.description || t.admin.noDescription}</p>
         <p className="mt-0.5 text-xs text-text-3">
-          {t.admin.prefix} <span className="font-semibold text-text-2">{p.prefix}</span> · {p.code}
+          {t.admin.prefix} <span className="font-mono font-semibold text-text-2">{p.prefix}</span> · <span className="font-mono">/{p.code}</span>
         </p>
       </div>
       <div className="flex items-center gap-1">
         {slug && (
-          <a className="rounded-md px-2 py-1.5 text-[0.8125rem] font-medium text-brand hover:bg-brand-soft" href={`/tv/${slug}/${p.code}`} target="_blank" rel="noreferrer">
+          <a className="rounded-md px-2 py-1.5 text-[0.8125rem] font-medium text-brand underline-offset-4 hover:underline" href={`/tv/${slug}/${p.code}`} target="_blank" rel="noreferrer">
             {t.admin.openTv}
           </a>
         )}
@@ -266,10 +249,7 @@ function NewServicePoint({ onDone }: { onDone: () => void }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="size-4 text-text-2" />
-          {t.admin.newServicePoint}
-        </CardTitle>
+        <CardTitle>{t.admin.newServicePoint}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="grid gap-4">
@@ -295,8 +275,8 @@ function NewServicePoint({ onDone }: { onDone: () => void }) {
                   title={ICONS[k].label}
                   onClick={() => setIcon(k)}
                   className={cn(
-                    'grid h-11 place-items-center rounded-md border transition-colors',
-                    icon === k ? 'border-brand bg-brand-soft text-brand ring-1 ring-brand' : 'border-line-strong text-text-2 hover:bg-subtle',
+                    'grid h-10 place-items-center rounded-md border transition-colors',
+                    icon === k ? 'border-brand bg-brand-soft text-brand' : 'border-line text-text-2 hover:bg-subtle',
                   )}
                 >
                   <ServiceIcon name={k} />
@@ -330,11 +310,8 @@ function StaffRow({ u, onDone }: { u: StaffUser; onDone: () => void }) {
     onSuccess: onDone,
   });
   return (
-    <li className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0">
-      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-subtle text-sm font-semibold text-text-2">
-        {u.email.charAt(0).toUpperCase()}
-      </span>
-      <span className="min-w-0 flex-1 truncate text-sm">{u.email}</span>
+    <li className="flex min-h-12 items-center gap-3 border-b border-line px-4 py-2 last:border-b-0">
+      <span className={cn('min-w-0 flex-1 truncate text-sm', !u.isActive && 'text-text-3')}>{u.email}</span>
       <Badge tone={u.role === 'CLINIC_ADMIN' ? 'brand' : 'neutral'}>{u.role === 'CLINIC_ADMIN' ? t.admin.roleAdmin : t.admin.roleStaff}</Badge>
       {!u.isActive && <Badge tone="warn">{t.admin.inactive}</Badge>}
       {u.role === 'STAFF' && (
@@ -364,10 +341,7 @@ function NewStaff({ onDone }: { onDone: () => void }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="size-4 text-text-2" />
-          {t.admin.newStaff}
-        </CardTitle>
+        <CardTitle>{t.admin.newStaff}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="grid gap-4">
@@ -407,10 +381,7 @@ function NewSlot({ points, onDone }: { points: ServicePoint[]; onDone: () => voi
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="size-4 text-text-2" />
-          {t.admin.newSlot}
-        </CardTitle>
+        <CardTitle>{t.admin.newSlot}</CardTitle>
       </CardHeader>
       <CardContent>
         {points.length === 0 ? (

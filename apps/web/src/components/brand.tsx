@@ -36,7 +36,7 @@ const initialsOf = (name: string) =>
 export function ClinicHeader({ name, sub }: { name: string; sub?: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-lg bg-brand text-base font-semibold text-white">
+      <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-md bg-text text-sm font-semibold tracking-wide text-white">
         {initialsOf(name)}
       </span>
       <div className="min-w-0">
@@ -49,7 +49,7 @@ export function ClinicHeader({ name, sub }: { name: string; sub?: string }) {
 
 export function PoweredBy() {
   return (
-    <p className="mt-10 flex items-center justify-center gap-2 text-xs text-text-3">
+    <p className="mt-10 flex items-center gap-2 text-xs text-text-3">
       <LogoMark className="size-4" /> Powered by Queueless
     </p>
   );

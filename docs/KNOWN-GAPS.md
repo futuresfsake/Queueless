@@ -28,6 +28,14 @@ Last updated: 2026-11-12. This is the honest list of what is missing, unverified
 - Fonts (IBM Plex Sans and Mono) are bundled from npm, not loaded from a CDN.
 - The receipt edge uses CSS masks; very old browsers will show a plain rectangle.
 
+## Design (2026-11-12, third pass: refinement)
+- The second-pass look (yellow marker, LED board) was replaced by the calm blue "clinic" system in `f31be07`. This pass kept that layout and removed what made it look generated: floating shadowed cards on a grey page, icon tiles, pill badges, filler subtitles, a three-card home page. It now uses a white page, hairlines, small radii, flat status tags, a real table for the waiting list and a ticket laid out like a paper stub.
+- The home page (`/`) is now a product page: what it is, how it works, demo links, the measured results with their conditions, privacy and what is not built. Its numbers are copied from `README.md`; change both together. Its demo links point at `VITE_DEMO_SLUG` (default `demo-clinic`), which only exists after `seed:demo` has run against that database.
+- Queue numbers stay in IBM Plex Sans (tabular digits). IBM Plex Mono was tried and dropped because its zero is dotted, which is easy to misread on a ticket.
+- The TV sizes the "now serving" number from its length, so a three-letter prefix shrinks instead of clipping. Checked only with `G-001` style numbers at 1920x1080.
+- Checked by one scripted headless-Chromium pass (not in the repo): home, login, join, ticket, staff, Call next with Space, the three admin tabs and the TV rendered with no page errors, at 1280 px, 390 px and 1920x1080. The home page was also measured at 360 px (no horizontal scroll). **Not done:** the earlier 17 functional checks were not re-run as a set, and the open items from the second pass (accessibility audit, Firefox and Safari, real phones, a real TV) still apply.
+- **Build fix found on the way:** the web app imported a value (`SERVICE_ICONS`) from the CommonJS build of `@queueless/shared`, which blanked the dev page and failed `vite build`. `vite.config.ts` now aliases the package to its TypeScript source for the browser bundle.
+
 ## Known weaker points (by design for the MVP)
 - **Single API server.** Rate limits and login throttling are in memory; a second server would not share them (ADR-005). Sockets are a single Socket.IO server with no Redis adapter.
 - **Per-IP limits hurt shared networks.** A clinic behind one NAT address shares the 30 writes per minute limit. Configurable with `PUBLIC_WRITE_LIMIT`.

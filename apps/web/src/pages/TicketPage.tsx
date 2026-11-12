@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BellRing, CheckCircle2, Clock, Stethoscope, XCircle } from 'lucide-react';
+import { BellRing } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { ClinicHeader, PoweredBy } from '../components/brand';
@@ -76,39 +76,44 @@ export function TicketPage() {
 
       {/* the one thing to know right now */}
       {called && (
-        <div role="status" className="mb-4 flex items-start gap-3 rounded-xl border border-ok-line bg-ok-soft p-4">
-          <BellRing className="mt-0.5 size-6 shrink-0 text-ok" />
+        <div role="status" className="mb-4 flex items-center gap-3 rounded-md bg-ok px-4 py-3.5 text-white">
+          <BellRing className="size-6 shrink-0" />
           <div>
-            <p className="text-lg font-semibold text-ok">{t.patient.yourTurnTitle}</p>
-            <p className="text-sm text-text">{t.patient.yourTurnBody}</p>
+            <p className="text-lg font-semibold leading-tight">{t.patient.yourTurnTitle}</p>
+            <p className="text-sm text-white/90">{t.patient.yourTurnBody}</p>
           </div>
         </div>
       )}
 
-      <section className="rounded-xl border border-line bg-surface p-6 text-center shadow-card">
-        <StatusBadge status={v.status} />
-        <p className="mt-5 text-sm text-text-2">{t.patient.yourNumber}</p>
-        <p
-          key={v.number}
-          data-testid="ticket-number"
-          className="ticket-no fade-in mt-1 whitespace-nowrap text-[clamp(3.25rem,18vw,4.5rem)] leading-none"
-        >
-          {v.number}
-        </p>
-        {v.patientName && <p className="mt-3 text-[0.9375rem] text-text-2">{v.patientName}</p>}
+      {/* laid out like the paper stub it replaces: number on top, a tear line, the details under it */}
+      <section className="rounded-md border border-line-strong bg-surface">
+        <div className="px-5 pb-6 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="caption">{t.patient.yourNumber}</p>
+            <StatusBadge status={v.status} />
+          </div>
+          <p
+            key={v.number}
+            data-testid="ticket-number"
+            className="ticket-no fade-in mt-4 whitespace-nowrap text-[clamp(3.25rem,19vw,4.75rem)] leading-none"
+          >
+            {v.number}
+          </p>
+          {v.patientName && <p className="mt-3 text-[0.9375rem] text-text-2">{v.patientName}</p>}
+        </div>
 
         {(waiting || called || serving) && (
-          <dl className="mt-6 grid grid-cols-2 divide-x divide-line rounded-lg border border-line bg-canvas">
+          <dl className="perforation grid grid-cols-2 divide-x divide-line">
             {waiting ? (
               <Figure label={t.patient.aheadOfYou} value={String(v.peopleAhead)} />
             ) : (
-              <Figure label={t.patient.status} value={called ? t.patient.statusCalled : t.patient.statusServing} />
+              <Figure label={t.patient.status} value={called ? t.patient.statusCalled : t.patient.statusServing} plain />
             )}
-            <Figure label={t.patient.nowServing} value={v.nowServing ?? t.patient.nobodyYet} />
+            <Figure label={t.patient.nowServing} value={v.nowServing ?? t.patient.nobodyYet} plain={!v.nowServing} />
           </dl>
         )}
 
-        <p className="mt-5 text-sm text-text-2">
+        <p className="perforation px-5 py-3.5 text-sm text-text-2">
           <StatusLine v={v} />
         </p>
       </section>
@@ -116,11 +121,11 @@ export function TicketPage() {
       {canCancel && (
         <div className="mt-5">
           {!confirming ? (
-            <Button variant="ghost" className="w-full" onClick={() => setConfirming(true)}>
+            <Button variant="secondary" className="h-11 w-full" onClick={() => setConfirming(true)}>
               {t.patient.cancel}
             </Button>
           ) : (
-            <div className="rounded-lg border border-danger-line bg-surface p-4">
+            <div className="rounded-md border border-danger-line bg-surface p-4">
               <p className="text-sm font-medium">{t.patient.cancelConfirm}</p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Button variant="secondary" onClick={() => setConfirming(false)}>
@@ -135,7 +140,7 @@ export function TicketPage() {
         </div>
       )}
 
-      <p className="mt-8 text-center text-xs leading-relaxed text-text-3">{t.patient.keepLink}</p>
+      <p className="mt-6 text-xs leading-relaxed text-text-3">{t.patient.keepLink}</p>
     </Frame>
   );
 }
@@ -143,43 +148,24 @@ export function TicketPage() {
 function StatusBadge({ status }: { status: TicketView['status'] }) {
   switch (status) {
     case 'WAITING':
-      return (
-        <Badge tone="neutral">
-          <Clock /> {t.patient.statusWaiting}
-        </Badge>
-      );
+      return <Badge tone="neutral">{t.patient.statusWaiting}</Badge>;
     case 'CALLED':
-      return (
-        <Badge tone="ok">
-          <BellRing /> {t.patient.statusCalled}
-        </Badge>
-      );
+      return <Badge tone="ok">{t.patient.statusCalled}</Badge>;
     case 'SERVING':
-      return (
-        <Badge tone="brand">
-          <Stethoscope /> {t.patient.statusServing}
-        </Badge>
-      );
+      return <Badge tone="brand">{t.patient.statusServing}</Badge>;
     case 'SERVED':
-      return (
-        <Badge tone="ok">
-          <CheckCircle2 /> {t.patient.statusDone}
-        </Badge>
-      );
+      return <Badge tone="ok">{t.patient.statusDone}</Badge>;
     default:
-      return (
-        <Badge tone="neutral">
-          <XCircle /> {t.patient.statusClosed}
-        </Badge>
-      );
+      return <Badge tone="neutral">{t.patient.statusClosed}</Badge>;
   }
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
+/** `plain` is for values that are words, not queue numbers, so they stay in the text face. */
+function Figure({ label, value, plain }: { label: string; value: string; plain?: boolean }) {
   return (
-    <div className="px-3 py-3">
-      <dt className="text-xs text-text-2">{label}</dt>
-      <dd className="ticket-no mt-0.5 text-xl">{value}</dd>
+    <div className="px-5 py-3.5">
+      <dt className="caption">{label}</dt>
+      <dd className={cn('mt-1 text-2xl leading-tight', plain ? 'font-semibold' : 'ticket-no')}>{value}</dd>
     </div>
   );
 }
@@ -195,8 +181,8 @@ function StatusLine({ v }: { v: TicketView }) {
 
 function Frame({ children, clinic, sub }: { children: ReactNode; clinic?: string; sub?: string }) {
   return (
-    <main className={cn('mx-auto min-h-dvh max-w-md px-4 pb-10 pt-6')}>
-      <div className="mb-6">{clinic ? <ClinicHeader name={clinic} sub={sub} /> : <p className="text-sm font-medium text-text-2">Queueless</p>}</div>
+    <main className="mx-auto min-h-dvh max-w-md px-4 pb-10 pt-5">
+      <div className="mb-5 border-b border-line pb-4">{clinic ? <ClinicHeader name={clinic} sub={sub} /> : <p className="text-sm font-medium text-text-2">Queueless</p>}</div>
       {children}
       <PoweredBy />
     </main>

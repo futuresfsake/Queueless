@@ -8,8 +8,8 @@ import { Wordmark } from './brand';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-    isActive ? 'bg-brand-soft text-brand' : 'text-text-2 hover:bg-subtle hover:text-text',
+    'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
+    isActive ? 'bg-line text-text' : 'text-text-2 hover:bg-line/60 hover:text-text',
   );
 
 /**
@@ -33,30 +33,26 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
     </>
   );
-  const initial = (user?.email ?? '?').charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[15rem_1fr]">
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface md:flex">
-        <div className="px-5 py-5">
+    <div className="min-h-dvh md:grid md:grid-cols-[13.5rem_1fr]">
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-subtle md:flex">
+        <div className="px-4 pb-5 pt-4">
           <Wordmark />
         </div>
-        <nav aria-label="Main" className="flex flex-col gap-1 px-3">
+        <nav aria-label="Main" className="flex flex-col gap-0.5 px-2">
           {nav}
         </nav>
-        <div className="mt-auto border-t border-line p-3">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-semibold text-brand">
-              {initial}
+        <div className="mt-auto border-t border-line p-2">
+          <div className="px-2.5 py-1.5">
+            <span className="block truncate text-[0.8125rem] font-medium" title={user?.email}>
+              {user?.email}
             </span>
-            <span className="min-w-0">
-              <span className="block truncate text-[0.8125rem] font-medium">{user?.email}</span>
-              <span className="block text-xs text-text-3">{isAdmin ? t.nav.roleAdmin : t.nav.roleStaff}</span>
-            </span>
+            <span className="block text-xs text-text-3">{isAdmin ? t.nav.roleAdmin : t.nav.roleStaff}</span>
           </div>
           <button
             onClick={signOut}
-            className="mt-1 flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-text-2 hover:bg-subtle hover:text-text"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-text-2 hover:bg-line/60 hover:text-text"
           >
             <LogOut className="size-[1.1rem]" />
             {t.staff.signOut}
@@ -76,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {nav}
           </nav>
         </header>
-        <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 md:px-8 md:pt-8">{children}</main>
+        <main className="w-full max-w-6xl px-4 pb-16 pt-5 md:px-8 md:pt-6">{children}</main>
       </div>
     </div>
   );
@@ -84,10 +80,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line pb-4">
       <div>
-        <h1 className="text-2xl">{title}</h1>
-        {description && <p className="mt-1 text-sm text-text-2">{description}</p>}
+        <h1 className="text-xl">{title}</h1>
+        {description && <p className="mt-0.5 text-sm text-text-2">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
     </div>
