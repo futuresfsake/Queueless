@@ -20,6 +20,8 @@ export const AuthUser = z.object({
   email: z.string(),
   role: Role,
   tenantId: z.string().uuid().nullable(),
+  /** Clinic slug, sent at login so the admin screen can build public links (/c/:slug, /tv/:slug/:code). */
+  tenantSlug: z.string().nullable().optional(),
 });
 export type AuthUser = z.infer<typeof AuthUser>;
 

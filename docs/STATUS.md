@@ -24,6 +24,7 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 - M3a backend (2026-11-12): public API (join, ticket status, cancel, TV display, slots, booking), per-IP rate limit, anonymous sockets for the patient page and TV. 18 unit and 101 integration tests green. Web pages added the same day: join + book (`/c/:slug`), my ticket (`/t/:token`), TV (`/tv/:slug/:code`), and `seed:demo`. Smoke-tested against the real API (slots, join, ticket status, display; seed is idempotent). Not yet clicked through in a browser. Not built: slots admin UI (create slots via the API or the seed), phone purge job (P1).
 - M4 (2026-11-12, local): k6 booking race (200 -> 1 booked, 199 SLOT_FULL), k6 3-desk call-next (90 distinct, p95 20.9 ms), invariant auditor CLI (A-1..A-8) with corruption tests. All recorded in validation-results with conditions. Not yet: k6 + auditor in CI, abuse-protection extras (guest-token expiry is done; per-IP join cap is the public rate limit), README validation table.
 - 30-day purge of patient name and phone built and tested (T-18; 112 integration tests green).
+- Clinic Admin screen (`/admin`): create service points, staff accounts (activate/deactivate) and booking slots from the UI; login now returns `tenantSlug` for public links. Typechecks and builds; not clicked through in a browser.
 
 See [KNOWN-GAPS.md](KNOWN-GAPS.md) for what is not built, not verified, or weaker than it looks.
 

@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
+import { AdminPage } from './pages/AdminPage';
 import { HomePage } from './pages/HomePage';
 import { JoinPage } from './pages/JoinPage';
 import { LoginPage } from './pages/LoginPage';
@@ -16,6 +17,9 @@ export function App() {
         <Route path="/t/:token" element={<TicketPage />} />
         <Route path="/tv/:slug/:code" element={<TvPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route element={<RequireAuth roles={['CLINIC_ADMIN']} />}>
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
         <Route element={<RequireAuth roles={['STAFF', 'CLINIC_ADMIN']} />}>
           <Route path="/staff" element={<StaffPage />} />
         </Route>

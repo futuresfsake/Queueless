@@ -1,6 +1,7 @@
 import type { TicketAction, TicketStatus } from '@queueless/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/auth-store';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -102,6 +103,11 @@ export function StaffPage() {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">{t.staff.title}</h1>
         <div className="flex items-center gap-3 text-sm">
+          {user?.role === 'CLINIC_ADMIN' && (
+            <Link className="underline" to="/admin">
+              {t.admin.title}
+            </Link>
+          )}
           <span className="text-muted-foreground">{user?.email}</span>
           <Button variant="outline" size="sm" onClick={signOut}>
             {t.staff.signOut}

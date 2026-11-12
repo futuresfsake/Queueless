@@ -69,6 +69,7 @@ describe('US-4 login and sessions', () => {
       email: 'admin@a.test',
       role: 'CLINIC_ADMIN',
       tenantId: tenantA.id,
+      tenantSlug: expect.any(String),
     });
     expect(JSON.stringify(res.body)).not.toMatch(/passwordHash|scrypt/);
   });
