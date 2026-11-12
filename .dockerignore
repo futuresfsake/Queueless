@@ -5,6 +5,4 @@
 .git
 .github
 docs
-apps/web/src
-apps/web/public
 k6
