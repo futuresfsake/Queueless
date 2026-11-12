@@ -19,8 +19,8 @@ const SLUG = process.env.DEMO_SLUG ?? 'demo-clinic';
 const ADMIN_EMAIL = `admin@${SLUG}.example`;
 const STAFF_EMAIL = `staff@${SLUG}.example`;
 const POINTS = [
-  { name: 'General Consult', code: 'general', prefix: 'G' },
-  { name: 'Laboratory', code: 'lab', prefix: 'L' },
+  { name: 'General Consult', code: 'general', prefix: 'G', icon: 'stethoscope', description: 'Check-ups, coughs and fevers, prescriptions.' },
+  { name: 'Laboratory', code: 'lab', prefix: 'L', icon: 'lab', description: 'Blood tests and lab results.' },
 ];
 const SLOT_HOURS_LOCAL = [9, 9.5, 10, 10.5, 11, 11.5];
 const SLOT_CAPACITY = 3;
@@ -59,6 +59,8 @@ async function main() {
         const point =
           (await tx.servicePoint.findFirst({ where: { tenantId: tenant.id, code: p.code } })) ??
           (await tx.servicePoint.create({ data: { tenantId: tenant.id, ...p } }));
+        // Re-running the seed also refreshes the hint and icon of an existing service point.
+        await tx.servicePoint.update({ where: { id: point.id }, data: { description: p.description, icon: p.icon } });
         for (const h of SLOT_HOURS_LOCAL) {
           const hh = String(Math.floor(h)).padStart(2, '0');
           const mm = h % 1 ? '30' : '00';

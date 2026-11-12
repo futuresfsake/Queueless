@@ -47,8 +47,15 @@ export const UpdateUserBody = z
 export type UpdateUserBody = z.infer<typeof UpdateUserBody>;
 
 // US-3. Matches the DB CHECKs: prefix ^[A-Z]{1,3}$, code ^[a-z0-9-]{1,40}$.
+// Icons a clinic can pick for a service (shown on the patient screen). The web app maps each key to a drawing.
+export const SERVICE_ICONS = ['stethoscope', 'lab', 'pharmacy', 'vaccine', 'baby', 'heart', 'imaging', 'eye'] as const;
+export type ServiceIcon = (typeof SERVICE_ICONS)[number];
+const serviceDescription = z.string().trim().max(140);
+
 export const CreateServicePointBody = z.object({
   name: z.string().trim().min(1).max(80),
+  description: serviceDescription.optional(),
+  icon: z.enum(SERVICE_ICONS).optional(),
   code: z.string().regex(/^[a-z0-9-]{1,40}$/),
   prefix: z.string().regex(/^[A-Z]{1,3}$/),
   maxWaiting: z.number().int().min(1).max(1000).optional(),
@@ -58,6 +65,8 @@ export type CreateServicePointBody = z.infer<typeof CreateServicePointBody>;
 export const UpdateServicePointBody = z
   .object({
     name: z.string().trim().min(1).max(80),
+    description: serviceDescription.nullable(),
+    icon: z.enum(SERVICE_ICONS).nullable(),
     isActive: z.boolean(),
     maxWaiting: z.number().int().min(1).max(1000),
   })

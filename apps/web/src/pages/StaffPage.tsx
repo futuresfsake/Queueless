@@ -1,14 +1,16 @@
 import type { TicketAction, TicketStatus } from '@queueless/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Bell, CheckCircle2, Clock, Phone, UserPlus, Wifi, WifiOff } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/auth-store';
-import { TopBar } from '../components/brand';
+import { Alert, EmptyState, Skeleton } from '../components/feedback';
+import { AppShell, PageHeader } from '../components/shell';
+import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Input, Select } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { api, ApiError } from '../lib/api';
-import { cn } from '../lib/utils';
 import { useQueueSocket } from '../lib/useQueueSocket';
 import { t } from '../strings';
 
@@ -22,6 +24,7 @@ interface Ticket {
   number: string;
   status: TicketStatus;
   patientName: string;
+  issuedAt: string;
 }
 interface QueueSnapshot {
   servicePointId: string;
@@ -30,9 +33,21 @@ interface QueueSnapshot {
 
 const newKey = () => crypto.randomUUID();
 
+/** Whole minutes since the ticket was issued, re-evaluated every 30 s so the list stays honest. */
+function useNow() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+const minutesSince = (iso: string, now: number) => Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60_000));
+
 export function StaffPage() {
-  const { token, user, signOut } = useAuth();
+  const { token } = useAuth();
   const qc = useQueryClient();
+  const now = useNow();
   const [servicePointId, setServicePointId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -94,142 +109,203 @@ export function StaffPage() {
   }, [servicePointId, callNext]);
 
   const tickets = queue.data?.tickets ?? [];
-  const byStatus = (s: TicketStatus) => tickets.filter((x) => x.status === s);
-  const waiting = byStatus('WAITING');
+  const by = (s: TicketStatus) => tickets.filter((x) => x.status === s);
+  const waiting = by('WAITING');
+  const atDesk = tickets.filter((x) => x.status === 'CALLED' || x.status === 'SERVING');
+  const longest = waiting.length ? Math.max(...waiting.map((x) => minutesSince(x.issuedAt, now))) : 0;
   const run = (id: string, action: TicketAction) => act.mutate({ id, action, key: newKey() });
+  const loading = points.isLoading || (!!servicePointId && queue.isLoading);
 
   return (
-    <div className="min-h-dvh">
-      <TopBar>
-        {user?.role === 'CLINIC_ADMIN' && <Link to="/admin">{t.admin.title}</Link>}
-        <span className="text-white/70">{user?.email}</span>
-        <Button variant="quiet" size="sm" onClick={signOut}>
-          {t.staff.signOut}
-        </Button>
-      </TopBar>
+    <AppShell>
+      <PageHeader
+        title={t.staff.title}
+        description={t.staff.subtitle}
+        actions={
+          active.length > 0 && (
+            <>
+              <LiveBadge connected={connected} />
+              {active.length > 1 && (
+                <Select
+                  aria-label={t.staff.servicePoint}
+                  className="h-10 w-52"
+                  value={servicePointId ?? ''}
+                  onChange={(e) => setServicePointId(e.target.value)}
+                >
+                  {active.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+              <Button
+                variant="primary"
+                size="md"
+                disabled={callNext.isPending || waiting.length === 0}
+                onClick={() => callNext.mutate(newKey())}
+              >
+                <Bell />
+                {t.staff.callNext}
+                <kbd className="rounded border border-white/40 px-1.5 text-[0.6875rem] font-medium leading-4">{t.staff.callNextHint}</kbd>
+              </Button>
+            </>
+          )
+        }
+      />
 
       {!connected && (
-        <p role="status" className="bg-alarm px-5 py-2 text-center text-[0.8125rem] font-semibold text-white">
-          <span className="blink mr-2 inline-block size-2 bg-white align-middle" />
+        <Alert tone="warn" className="mb-4">
           {t.staff.reconnecting}
-        </p>
+        </Alert>
       )}
+      {notice && (
+        <Alert tone="info" className="mb-4">
+          {notice}
+        </Alert>
+      )}
+      {points.isSuccess && active.length === 0 && <Alert tone="info">{t.staff.noServicePoints}</Alert>}
 
-      <main className="mx-auto max-w-6xl px-5 pb-16 pt-6">
-        {points.isSuccess && active.length === 0 && <p className="text-grey">{t.staff.noServicePoints}</p>}
+      {active.length > 0 && (
+        <>
+          <dl className="mb-6 grid grid-cols-3 gap-3">
+            <Stat label={t.staff.waitingCount} value={loading ? null : waiting.length} />
+            <Stat label={t.staff.atDeskCount} value={loading ? null : atDesk.length} />
+            <Stat label={t.staff.longestWait} value={loading ? null : waiting.length ? `${longest} min` : '-'} />
+          </dl>
 
-        {active.length > 0 && (
-          <>
-            <div className="flex flex-wrap items-stretch justify-between gap-4">
-              <div role="tablist" aria-label={t.staff.servicePoint} className="flex flex-wrap gap-2">
-                {active.map((p) => (
-                  <button
-                    key={p.id}
-                    role="tab"
-                    aria-selected={p.id === servicePointId}
-                    onClick={() => setServicePointId(p.id)}
-                    className={cn(
-                      'h-11 border-2 border-ink px-5 text-[0.9375rem] font-bold',
-                      p.id === servicePointId ? 'bg-ink text-white' : 'bg-white hover:bg-mark',
-                    )}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-4">
-                <p className="text-right leading-none">
-                  <span className="num block text-[2.4rem]">{waiting.length}</span>
-                  <span className="text-xs font-semibold uppercase">{t.staff.waitingCount}</span>
-                </p>
-                <Button
-                  variant="accent"
-                  size="lg"
-                  className="h-14 px-6 text-[1.05rem]"
-                  disabled={callNext.isPending || waiting.length === 0}
-                  onClick={() => callNext.mutate(newKey())}
-                >
-                  {t.staff.callNext}
-                  <kbd className="border border-current px-1.5 py-px font-mono text-[0.6875rem] font-semibold uppercase">
-                    {t.staff.callNextHint}
-                  </kbd>
-                </Button>
-              </div>
-            </div>
-
-            {notice && (
-              <p role="alert" className="mt-4 border-2 border-ink bg-mark px-4 py-2.5 text-sm font-semibold">
-                {notice}
-              </p>
-            )}
-
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_0.9fr_1.05fr]">
-              <Column title={t.staff.called} highlight tickets={byStatus('CALLED')}>
-                {(x) => (
-                  <>
-                    <Button size="sm" onClick={() => run(x.id, 'start')}>{t.staff.start}</Button>
-                    <Button size="sm" variant="ghost" onClick={() => run(x.id, 'no-show')}>{t.staff.noShow}</Button>
-                    <Button size="sm" variant="ghost" onClick={() => run(x.id, 'skip')}>{t.staff.skip}</Button>
-                  </>
+          <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <div>
+                    <CardTitle>{t.staff.atDesk}</CardTitle>
+                    <CardDescription>{t.staff.atDeskHint}</CardDescription>
+                  </div>
+                </CardHeader>
+                {loading ? (
+                  <RowsSkeleton />
+                ) : atDesk.length === 0 ? (
+                  <EmptyState title={t.staff.deskEmpty}>{t.staff.deskEmptyHint}</EmptyState>
+                ) : (
+                  <ul>
+                    {atDesk.map((x) => (
+                      <Row key={x.id} ticket={x}>
+                        {x.status === 'CALLED' ? (
+                          <>
+                            <Badge tone="brand">
+                              <Bell /> {t.staff.statusCalled}
+                            </Badge>
+                            <Button size="sm" variant="primary" onClick={() => run(x.id, 'start')}>
+                              {t.staff.start}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => run(x.id, 'no-show')}>
+                              {t.staff.noShow}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => run(x.id, 'skip')}>
+                              {t.staff.skip}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Badge tone="ok">
+                              <CheckCircle2 /> {t.staff.statusServing}
+                            </Badge>
+                            <Button size="sm" variant="primary" onClick={() => run(x.id, 'complete')}>
+                              {t.staff.complete}
+                            </Button>
+                          </>
+                        )}
+                      </Row>
+                    ))}
+                  </ul>
                 )}
-              </Column>
-              <Column title={t.staff.serving} tickets={byStatus('SERVING')}>
-                {(x) => <Button size="sm" onClick={() => run(x.id, 'complete')}>{t.staff.complete}</Button>}
-              </Column>
-              <Column title={t.staff.waiting} tickets={waiting} numbered>
-                {(x) => (
-                  <Button size="sm" variant="ghost" className="text-grey" onClick={() => run(x.id, 'cancel')}>
-                    {t.staff.cancel}
-                  </Button>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div>
+                    <CardTitle>{t.staff.waiting}</CardTitle>
+                    <CardDescription>{t.staff.waitingHint}</CardDescription>
+                  </div>
+                </CardHeader>
+                {loading ? (
+                  <RowsSkeleton />
+                ) : waiting.length === 0 ? (
+                  <EmptyState title={t.staff.waitingEmpty}>{t.staff.waitingEmptyHint}</EmptyState>
+                ) : (
+                  <ul>
+                    {waiting.map((x, i) => (
+                      <Row key={x.id} ticket={x} position={i + 1}>
+                        <span className="flex items-center gap-1.5 text-[0.8125rem] text-text-2">
+                          <Clock className="size-3.5" />
+                          {minutesSince(x.issuedAt, now)} min
+                        </span>
+                        <Button size="sm" variant="ghost" onClick={() => run(x.id, 'cancel')}>
+                          {t.staff.cancel}
+                        </Button>
+                      </Row>
+                    ))}
+                  </ul>
                 )}
-              </Column>
+              </Card>
             </div>
 
             {servicePointId && <WalkIn servicePointId={servicePointId} onDone={onSuccess} onError={onError} />}
-          </>
-        )}
-      </main>
+          </div>
+        </>
+      )}
+    </AppShell>
+  );
+}
+
+function LiveBadge({ connected }: { connected: boolean }) {
+  return connected ? (
+    <Badge tone="ok">
+      <span className="pulse-dot size-1.5 rounded-full bg-ok" />
+      <Wifi className="hidden" />
+      {t.staff.live}
+    </Badge>
+  ) : (
+    <Badge tone="warn">
+      <WifiOff />
+      {t.staff.offline}
+    </Badge>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number | null }) {
+  return (
+    <div className="rounded-lg border border-line bg-surface px-4 py-3 shadow-card">
+      <dt className="text-xs font-medium text-text-2">{label}</dt>
+      <dd className="mt-1 text-2xl font-semibold tabular-nums leading-none">
+        {value === null ? <Skeleton className="h-6 w-10" /> : value}
+      </dd>
     </div>
   );
 }
 
-/** One status column as a plain ruled table: number first, name, actions on the right. */
-function Column({
-  title,
-  tickets,
-  highlight,
-  numbered,
-  children,
-}: {
-  title: string;
-  tickets: Ticket[];
-  highlight?: boolean;
-  numbered?: boolean;
-  children: (t: Ticket) => ReactNode;
-}) {
+function RowsSkeleton() {
   return (
-    <section className="border-2 border-ink bg-white">
-      <div className={cn('flex items-center justify-between border-b-2 border-ink px-3 py-2', highlight ? 'bg-mark' : 'bg-page')}>
-        <h2 className="text-sm font-bold uppercase tracking-wide">{title}</h2>
-        <span className="num text-lg">{tickets.length}</span>
-      </div>
-      {tickets.length === 0 && <p className="px-3 py-4 text-sm text-grey">{t.staff.empty}</p>}
-      <ul>
-        {tickets.map((x, i) => (
-          <li
-            key={x.id}
-            data-ticket={x.number}
-            className="flex items-center gap-2.5 border-b border-rule px-3 py-2 last:border-b-0"
-          >
-            {numbered && <span className="num w-4 text-xs text-grey">{i + 1}</span>}
-            <span className="num text-[1.4rem]">{x.number}</span>
-            <span className="min-w-0 flex-1 truncate text-sm">{x.patientName}</span>
-            <div className="flex shrink-0 items-center gap-1">{children(x)}</div>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="space-y-3 p-5">
+      <Skeleton className="h-9" />
+      <Skeleton className="h-9" />
+    </div>
+  );
+}
+
+/** One patient: position (when queued), ticket number, name, then whatever actions apply. */
+function Row({ ticket, position, children }: { ticket: Ticket; position?: number; children: ReactNode }) {
+  return (
+    <li
+      data-ticket={ticket.number}
+      className="fade-in flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-5 py-3 last:border-b-0"
+    >
+      {position !== undefined && <span className="w-5 text-[0.8125rem] tabular-nums text-text-3">{position}</span>}
+      <span className="ticket-no w-[4.5rem] text-lg">{ticket.number}</span>
+      <span className="min-w-0 flex-1 truncate text-sm">{ticket.patientName}</span>
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{children}</div>
+    </li>
   );
 }
 
@@ -270,29 +346,43 @@ function WalkIn({
   };
 
   return (
-    <section className="mt-10 border-2 border-ink bg-white">
-      <div className="border-b-2 border-ink bg-page px-3 py-2">
-        <h2 className="text-sm font-bold uppercase tracking-wide">{t.staff.walkIn}</h2>
-      </div>
-      <form onSubmit={submit} className="grid items-end gap-x-4 gap-y-3 p-4 sm:grid-cols-[1fr_1fr_auto]">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pname">{t.staff.patientName}</Label>
-          <Input id="pname" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
+    <Card className="lg:sticky lg:top-6">
+      <CardHeader>
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="size-4 text-text-2" />
+            {t.staff.walkIn}
+          </CardTitle>
+          <CardDescription>{t.staff.walkInHint}</CardDescription>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pphone">{t.staff.phone}</Label>
-          <Input id="pphone" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </div>
-        <Button type="submit" disabled={add.isPending || !consent}>
-          {t.staff.add}
-        </Button>
-        <label className="flex cursor-pointer items-start gap-2.5 text-[0.8125rem] sm:col-span-3">
-          <input type="checkbox" className="mt-0.5 size-4 accent-black" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>
-            {t.staff.consent} <span className="text-grey">{t.staff.walkInHint}</span>
-          </span>
-        </label>
-      </form>
-    </section>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={submit} className="grid gap-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="pname">{t.staff.patientName}</Label>
+            <Input id="pname" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pphone">{t.staff.phone}</Label>
+            <div className="relative">
+              <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-3" />
+              <Input id="pphone" inputMode="tel" className="pl-9" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+          </div>
+          <label className="flex cursor-pointer items-start gap-2.5 text-[0.8125rem] leading-relaxed text-text-2">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)]"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+            />
+            {t.staff.consent}
+          </label>
+          <Button type="submit" variant="primary" disabled={add.isPending || !consent || !name.trim()}>
+            {t.staff.add}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

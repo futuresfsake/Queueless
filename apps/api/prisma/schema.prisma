@@ -78,6 +78,8 @@ model ServicePoint {
   prefix     String
   isActive   Boolean @default(true) @map("is_active")
   maxWaiting Int     @default(200) @map("max_waiting")
+  description String?
+  icon        String?
 
   tenant   Tenant          @relation(fields: [tenantId], references: [id])
   slots    Slot[]

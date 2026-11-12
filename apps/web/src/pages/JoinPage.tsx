@@ -1,7 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { CalendarClock, Check, Lock, ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Wordmark } from '../components/brand';
+import { ClinicHeader, PoweredBy } from '../components/brand';
+import { Alert, Skeleton } from '../components/feedback';
+import { ServiceIcon } from '../components/service-icon';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -11,7 +14,7 @@ import { t } from '../strings';
 
 interface Listing {
   clinic: string;
-  servicePoints: { id: string; name: string; code: string }[];
+  servicePoints: { id: string; name: string; code: string; description: string | null; icon: string | null; closed: boolean }[];
 }
 interface Slots {
   slots: { id: string; startsAt: string; remaining: number }[];
@@ -29,7 +32,9 @@ const errorText = (e: unknown) =>
         ? t.patient.slotFull
         : e.code === 'RATE_LIMITED'
           ? t.patient.rateLimited
-          : e.code === 'CONSENT_REQUIRED'
+          : e.code === 'SERVICE_POINT_INACTIVE'
+            ? t.patient.serviceClosedError
+            : e.code === 'CONSENT_REQUIRED'
             ? t.staff.consentRequired
             : t.patient.failed
     : e
@@ -46,7 +51,8 @@ export function JoinPage() {
     retry: false,
   });
   const [code, setCode] = useState<string | null>(null);
-  const chosen = code ?? listing.data?.servicePoints[0]?.code ?? null;
+  const firstOpen = listing.data?.servicePoints.find((p) => !p.closed)?.code ?? null;
+  const chosen = code ?? firstOpen;
 
   const slots = useQuery({
     queryKey: ['public', slug, chosen, 'slots'],
@@ -80,25 +86,26 @@ export function JoinPage() {
 
   if (listing.isError) {
     return (
-      <Shell>
-        <h1 className="text-3xl">{t.patient.clinicNotFoundTitle}</h1>
-        <p className="mt-2 text-grey">{t.patient.clinicNotFound}</p>
-      </Shell>
+      <Frame>
+        <h1 className="text-2xl">{t.patient.clinicNotFoundTitle}</h1>
+        <p className="mt-2 text-text-2">{t.patient.clinicNotFound}</p>
+      </Frame>
     );
   }
   if (!listing.data) {
     return (
-      <Shell>
-        <p className="text-grey">{t.patient.loading}</p>
-      </Shell>
+      <Frame>
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="mt-6 h-11" />
+        <Skeleton className="mt-3 h-11" />
+      </Frame>
     );
   }
   if (listing.data.servicePoints.length === 0) {
     return (
-      <Shell>
-        <h1 className="text-3xl">{listing.data.clinic}</h1>
-        <p className="mt-2 text-grey">{t.patient.noQueues}</p>
-      </Shell>
+      <Frame clinic={listing.data.clinic}>
+        <p className="text-text-2">{t.patient.noQueues}</p>
+      </Frame>
     );
   }
 
@@ -112,101 +119,140 @@ export function JoinPage() {
   const openSlots = slots.data?.slots ?? [];
 
   return (
-    <Shell>
-      <h1 className="text-[2rem]">{listing.data.clinic}</h1>
-      <p className="mt-1 text-grey">{t.patient.takeANumber}</p>
+    <Frame clinic={listing.data.clinic}>
+      <h1 className="text-[1.5rem] leading-tight">{t.patient.takeANumberTitle}</h1>
+      <p className="mt-1 text-text-2">{t.patient.takeANumber}</p>
 
-      {listing.data.servicePoints.length > 1 && (
-        <fieldset className="mt-6">
-          <legend className="mb-2 text-[0.8125rem] font-semibold">{t.patient.whereTo}</legend>
-          <div role="radiogroup" className="flex flex-wrap gap-2">
-            {listing.data.servicePoints.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                role="radio"
-                aria-checked={p.code === chosen}
-                onClick={() => setCode(p.code)}
-                className={cn(
-                  'h-10 border-2 border-ink px-4 text-sm font-semibold',
-                  p.code === chosen ? 'bg-ink text-white' : 'bg-white hover:bg-mark',
-                )}
-              >
-                {p.name}
-              </button>
-            ))}
+      <form onSubmit={submit} className="mt-6 grid gap-5 rounded-xl border border-line bg-surface p-5 shadow-card">
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium">{t.patient.whereTo}</legend>
+          <div role="radiogroup" aria-label={t.patient.whereTo} className="grid gap-3">
+            {listing.data.servicePoints.map((p) => {
+              const selected = p.code === chosen && !p.closed;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  aria-disabled={p.closed || undefined}
+                  onClick={() => !p.closed && setCode(p.code)}
+                  className={cn(
+                    // 64px tall: comfortably above the 56px kiosk and touch minimum
+                    'flex min-h-16 w-full items-center gap-3.5 rounded-lg border px-4 py-3 text-left transition-colors',
+                    p.closed
+                      ? 'cursor-not-allowed border-line bg-subtle'
+                      : selected
+                        ? 'border-brand bg-brand-soft ring-2 ring-brand'
+                        : 'border-line-strong bg-surface hover:border-brand hover:bg-brand-soft/50',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'grid size-10 shrink-0 place-items-center rounded-md',
+                      selected ? 'bg-brand text-white' : p.closed ? 'bg-line text-text-2' : 'bg-subtle text-text-2',
+                    )}
+                  >
+                    <ServiceIcon name={p.icon} className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className={cn('block text-base font-semibold leading-snug', p.closed ? 'text-text-2' : 'text-text')}>{p.name}</span>
+                    {p.description && <span className="mt-0.5 block text-[0.8125rem] leading-snug text-text-2">{p.description}</span>}
+                  </span>
+                  {p.closed ? (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line-strong bg-surface px-2.5 py-1 text-xs font-medium text-text-2">
+                      <Lock className="size-3" />
+                      {t.patient.closed}
+                    </span>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className={cn('grid size-6 shrink-0 place-items-center rounded-full border-2', selected ? 'border-brand bg-brand text-white' : 'border-line-strong')}
+                    >
+                      {selected && <Check className="size-4" strokeWidth={3} />}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </fieldset>
-      )}
 
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
+        <div className="grid gap-1.5">
           <Label htmlFor="name">{t.staff.patientName}</Label>
-          <Input id="name" required maxLength={120} autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} />
-          <p className="text-xs text-grey">{t.patient.nameHint}</p>
+          <Input id="name" required maxLength={120} autoComplete="given-name" aria-describedby="name-hint" value={name} onChange={(e) => setName(e.target.value)} />
+          <p id="name-hint" className="text-[0.8125rem] text-text-3">
+            {t.patient.nameHint}
+          </p>
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="grid gap-1.5">
           <Label htmlFor="phone">{t.staff.phone}</Label>
           <Input id="phone" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
 
-        <label className="flex cursor-pointer items-start gap-3 border-2 border-ink bg-white p-3 text-[0.8125rem] leading-relaxed">
+        <label className="flex cursor-pointer items-start gap-3 rounded-md bg-subtle p-3.5 text-[0.8125rem] leading-relaxed text-text-2">
           <input
             type="checkbox"
-            className="mt-0.5 size-[1.15rem] shrink-0 accent-black"
+            className="mt-0.5 size-5 shrink-0 accent-[var(--color-brand)]"
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
           />
           <span>{t.patient.consent}</span>
         </label>
 
-        {err && (
-          <p role="alert" className="border-2 border-alarm bg-white px-3 py-2 text-sm font-medium text-alarm">
-            {err}
-          </p>
-        )}
+        {err && <Alert tone="danger">{err}</Alert>}
 
-        <Button type="submit" variant="accent" size="lg" disabled={!formReady || busy}>
+        <Button type="submit" variant="primary" size="lg" className="h-14 text-base" disabled={!formReady || busy || !chosen}>
           {t.patient.join}
         </Button>
+        <p className="flex items-center justify-center gap-1.5 text-xs text-text-3">
+          <ShieldCheck className="size-3.5" />
+          {t.patient.privacyLine}
+        </p>
       </form>
 
       {openSlots.length > 0 && (
-        <section className="mt-10">
-          <h2 className="border-b-2 border-ink pb-2 text-xl">{t.patient.bookTitle}</h2>
-          <p className="mt-2 text-[0.8125rem] text-grey">{t.patient.bookHint}</p>
-          <ul className="mt-2">
+        <section className="mt-6 rounded-xl border border-line bg-surface p-5 shadow-card">
+          <h2 className="flex items-center gap-2 text-base">
+            <CalendarClock className="size-[1.1rem] text-text-2" />
+            {t.patient.bookTitle}
+          </h2>
+          <p className="mt-1 text-[0.8125rem] text-text-2">{t.patient.bookHint}</p>
+          <ul className="mt-3 grid grid-cols-2 gap-2">
             {openSlots.map((s) => {
               const full = s.remaining === 0;
               return (
-                <li key={s.id} className="flex items-center gap-3 border-b border-rule py-2.5">
-                  <span className="num w-[4.6rem] text-xl">
-                    {new Date(s.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                  </span>
-                  <span className={cn('flex-1 text-sm', full ? 'font-semibold text-alarm' : 'text-grey')}>
-                    {full ? t.patient.full : `${s.remaining} ${t.patient.left}`}
-                  </span>
-                  <Button size="sm" variant="outline" disabled={!formReady || full || busy} onClick={() => book.mutate(s.id)}>
-                    {t.patient.book}
-                  </Button>
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    disabled={!formReady || full || busy}
+                    onClick={() => book.mutate(s.id)}
+                    className="flex h-full min-h-[3.5rem] w-full flex-col items-start justify-center rounded-md border border-line-strong bg-surface px-3.5 py-2 text-left transition-colors enabled:hover:border-brand enabled:hover:bg-brand-soft disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    <span className="text-base font-semibold tabular-nums">
+                      {new Date(s.startsAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                    <span className={cn('text-xs', full ? 'font-medium text-danger' : 'text-text-3')}>
+                      {full ? t.patient.full : `${s.remaining} ${t.patient.left}`}
+                    </span>
+                  </button>
                 </li>
               );
             })}
           </ul>
-          {!formReady && <p className="mt-3 text-xs text-grey">{t.patient.bookNeedsName}</p>}
+          {!formReady && <p className="mt-3 text-xs text-text-3">{t.patient.bookNeedsName}</p>}
         </section>
       )}
-    </Shell>
+    </Frame>
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Frame({ children, clinic }: { children: React.ReactNode; clinic?: string }) {
   return (
-    <main className="mx-auto min-h-dvh max-w-md px-5 pb-14 pt-5">
-      <div className="mb-8">
-        <Wordmark className="text-base" />
-      </div>
+    <main className="mx-auto min-h-dvh max-w-md px-4 pb-10 pt-6">
+      <div className="mb-7">{clinic ? <ClinicHeader name={clinic} /> : <p className="text-sm font-medium text-text-2">Queueless</p>}</div>
       {children}
+      <PoweredBy />
     </main>
   );
 }

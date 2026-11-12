@@ -1,29 +1,56 @@
-import type { ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
-/** A yellow square, a lowercase name. Nothing clever. */
-export function Wordmark({ className, tone = 'ink' }: { className?: string; tone?: 'ink' | 'white' }) {
+/** Three lines in a queue, the first one longest. The whole idea, nothing more. */
+export function LogoMark({ className = 'size-7' }: { className?: string }) {
   return (
-    <span className={cn('inline-flex items-center gap-2 text-[1.15rem] font-bold tracking-tight', tone === 'white' ? 'text-white' : 'text-ink', className)}>
-      <span aria-hidden="true" className="inline-block size-[0.8em] border-2 border-ink bg-mark" />
-      queueless
+    <svg viewBox="0 0 28 28" className={className} aria-hidden="true">
+      <rect width="28" height="28" rx="7" fill="var(--color-brand)" />
+      <rect x="7" y="8" width="14" height="3" rx="1.5" fill="#fff" />
+      <rect x="7" y="12.5" width="10" height="3" rx="1.5" fill="#fff" fillOpacity="0.75" />
+      <rect x="7" y="17" width="6" height="3" rx="1.5" fill="#fff" fillOpacity="0.5" />
+    </svg>
+  );
+}
+
+export function Wordmark({ className, tone = 'dark' }: { className?: string; tone?: 'dark' | 'light' }) {
+  return (
+    <span className={cn('inline-flex items-center gap-2.5 text-[1.0625rem] font-semibold tracking-tight', tone === 'light' ? 'text-white' : 'text-text', className)}>
+      <LogoMark className="size-7" />
+      Queueless
     </span>
   );
 }
 
-/** Signed-in pages: a black strip with the name on the left and who/where on the right. */
-export function TopBar({ children }: { children?: ReactNode }) {
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join('');
+
+/**
+ * The clinic is the identity on patient screens: its name, with an initials tile where a logo would go
+ * (clinics cannot upload a logo yet). Queueless stays small, in the footer.
+ */
+export function ClinicHeader({ name, sub }: { name: string; sub?: string }) {
   return (
-    <header className="bg-ink text-white">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-5 py-2.5">
-        <span className="inline-flex items-center gap-2 text-[1.05rem] font-bold tracking-tight">
-          <span aria-hidden="true" className="inline-block size-[0.75em] bg-mark" />
-          queueless
-        </span>
-        <nav className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm [&_a]:underline [&_a]:underline-offset-4 [&_button]:!text-white/80 [&_button:hover]:!text-white">
-          {children}
-        </nav>
+    <div className="flex items-center gap-3">
+      <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-lg bg-brand text-base font-semibold text-white">
+        {initialsOf(name)}
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[1.0625rem] font-semibold leading-tight">{name}</p>
+        {sub && <p className="truncate text-[0.8125rem] text-text-2">{sub}</p>}
       </div>
-    </header>
+    </div>
+  );
+}
+
+export function PoweredBy() {
+  return (
+    <p className="mt-10 flex items-center justify-center gap-2 text-xs text-text-3">
+      <LogoMark className="size-4" /> Powered by Queueless
+    </p>
   );
 }

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { HealthResponse } from '@queueless/shared';
+import { MonitorSmartphone, Smartphone, UserCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
@@ -36,6 +37,12 @@ function useSocketCheck(): { state: SocketState; detail: string } {
   return result;
 }
 
+const points = [
+  { icon: Smartphone, title: t.home.pointPatientsTitle, body: t.home.pointPatientsBody },
+  { icon: UserCheck, title: t.home.pointStaffTitle, body: t.home.pointStaffBody },
+  { icon: MonitorSmartphone, title: t.home.pointScreenTitle, body: t.home.pointScreenBody },
+];
+
 export function HomePage() {
   const health = useQuery<HealthResponse>({
     queryKey: ['health'],
@@ -49,57 +56,57 @@ export function HomePage() {
   const socket = useSocketCheck();
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-6 py-5">
-      <header className="flex items-center justify-between border-b-2 border-ink pb-4">
-        <Wordmark />
-        <Link to="/login" className="text-sm font-medium underline underline-offset-4">
-          {t.home.staffSignIn}
-        </Link>
+    <div className="min-h-dvh">
+      <header className="border-b border-line bg-surface">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5">
+          <Wordmark />
+          <Link to="/login" className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }))}>
+            {t.home.staffSignIn}
+          </Link>
+        </div>
       </header>
 
-      <section className="grid flex-1 items-center gap-12 py-14 lg:grid-cols-[1.3fr_1fr]">
-        <div>
-          <h1 className="text-[clamp(2.6rem,6vw,4.6rem)] leading-[1]">
-            <span className="block">{t.home.headlineA}</span>
-            <span className="marker block w-fit">{t.home.headlineB}</span>
-          </h1>
-          <p className="mt-6 max-w-md text-[1.05rem] leading-relaxed text-grey">{t.home.body}</p>
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link to="/login" className={cn(buttonVariants({ variant: 'accent', size: 'lg' }))}>
+      <main className="mx-auto max-w-5xl px-5">
+        <section className="py-16 md:py-24">
+          <h1 className="max-w-2xl text-[clamp(2rem,4.6vw,3.25rem)] font-semibold leading-[1.1] tracking-tight">{t.home.headline}</h1>
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-text-2">{t.home.body}</p>
+          <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Link to="/login" className={cn(buttonVariants({ variant: 'primary', size: 'lg' }))}>
               {t.home.staffSignIn}
             </Link>
-            <span className="text-sm text-grey">{t.home.patientNote}</span>
+            <span className="text-sm text-text-2">{t.home.patientNote}</span>
           </div>
-        </div>
+        </section>
 
-        <div aria-hidden="true" className="receipt-wrap mx-auto w-full max-w-[16rem]">
-          <div className="receipt px-5 pb-8 pt-9 text-center font-mono">
-            <p className="text-xs font-semibold uppercase tracking-widest">Demo Health Center</p>
-            <div className="dots my-3" />
-            <p className="text-[0.8125rem] uppercase">{t.patient.yourNumber}</p>
-            <p className="num whitespace-nowrap text-[4.4rem] leading-none">G-014</p>
-            <div className="dots my-3" />
-            <p className="flex items-baseline justify-between text-sm uppercase">
-              {t.patient.aheadOfYou} <span className="num text-2xl">3</span>
-            </p>
-          </div>
-        </div>
-      </section>
+        <section className="grid gap-4 pb-16 md:grid-cols-3">
+          {points.map(({ icon: Icon, title, body }) => (
+            <div key={title} className="rounded-xl border border-line bg-surface p-5 shadow-card">
+              <span className="grid size-10 place-items-center rounded-lg bg-brand-soft text-brand">
+                <Icon className="size-5" />
+              </span>
+              <h2 className="mt-4 text-base">{title}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-text-2">{body}</p>
+            </div>
+          ))}
+        </section>
+      </main>
 
-      <footer className="flex flex-wrap gap-x-6 gap-y-1 border-t border-rule pt-3 font-mono text-xs text-grey">
-        <span data-testid="api-status">
-          API:{' '}
-          {health.isLoading
-            ? 'checking'
-            : health.isError
-              ? 'unreachable'
-              : `${health.data?.status} (db ${health.data?.db})`}
-        </span>
-        <span data-testid="socket-status">
-          WebSocket: {socket.state}
-          {socket.detail ? `, ${socket.detail}` : ''}
-        </span>
+      <footer className="border-t border-line">
+        <div className="mx-auto flex max-w-5xl flex-wrap gap-x-6 gap-y-1 px-5 py-4 text-xs text-text-3">
+          <span data-testid="api-status">
+            API:{' '}
+            {health.isLoading
+              ? 'checking'
+              : health.isError
+                ? 'unreachable'
+                : `${health.data?.status} (db ${health.data?.db})`}
+          </span>
+          <span data-testid="socket-status">
+            WebSocket: {socket.state}
+            {socket.detail ? `, ${socket.detail}` : ''}
+          </span>
+        </div>
       </footer>
-    </main>
+    </div>
   );
 }

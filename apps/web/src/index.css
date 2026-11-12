@@ -4,128 +4,136 @@
 @import "@fontsource/ibm-plex-sans/500.css";
 @import "@fontsource/ibm-plex-sans/600.css";
 @import "@fontsource/ibm-plex-sans/700.css";
-@import "@fontsource/ibm-plex-mono/500.css";
-@import "@fontsource/ibm-plex-mono/600.css";
-@import "@fontsource/ibm-plex-mono/700.css";
 
 /*
-  Queueless look: a printed clinic ticket and the LED "now serving" board.
-  White stock, black ink, a yellow highlighter, hard square edges, ruled tables, monospace numbers.
-  No serif, no cream, no soft shadows: a form you could photocopy.
+  Queueless design system.
+  Calm and clinical: cool neutrals, one blue, status colours only for status, one typeface.
+  Rules: 8px spacing grid, 1px borders instead of shadows, 44px touch targets on patient screens,
+  text contrast at least 4.5:1, state is never shown by colour alone (always an icon or a word too).
 */
 
 @theme {
-  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --color-page: #f3f3f0;
-  --color-white: #ffffff;
-  --color-ink: #0c0c0c;
-  --color-grey: #5b5b57;
-  --color-rule: #cfcfca;
-  --color-mark: #ffd60a;
-  --color-mark-soft: #fff3b0;
-  --color-led: #ff3b24;
-  --color-alarm: #c4210f;
-  --color-ok: #137a3f;
+  --color-canvas: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-subtle: #eff1f4;
+  --color-line: #e0e4ea;
+  --color-line-strong: #c3cad4;
 
-  --color-background: var(--color-page);
-  --color-foreground: var(--color-ink);
-  --color-card: var(--color-white);
-  --color-card-foreground: var(--color-ink);
-  --color-popover: var(--color-white);
-  --color-popover-foreground: var(--color-ink);
-  --color-primary: var(--color-ink);
-  --color-primary-foreground: var(--color-white);
-  --color-secondary: var(--color-page);
-  --color-secondary-foreground: var(--color-ink);
-  --color-muted: var(--color-page);
-  --color-muted-foreground: var(--color-grey);
-  --color-accent: var(--color-mark);
-  --color-accent-foreground: var(--color-ink);
-  --color-destructive: var(--color-alarm);
-  --color-border: var(--color-rule);
-  --color-input: var(--color-ink);
-  --color-ring: var(--color-ink);
+  --color-text: #101828;
+  --color-text-2: #475467;
+  --color-text-3: #667085;
 
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 3px;
-  --radius-xl: 4px;
-  --radius-2xl: 4px;
+  --color-brand: #0f5e8c;
+  --color-brand-hover: #0b4b71;
+  --color-brand-soft: #e5f0f7;
+  --color-brand-line: #b7d4e6;
+
+  --color-ok: #067647;
+  --color-ok-soft: #e6f5ed;
+  --color-ok-line: #b5dfc8;
+  --color-warn: #a84a07;
+  --color-warn-soft: #fef0d6;
+  --color-warn-line: #f2d08f;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdeceb;
+  --color-danger-line: #f3b8b3;
+
+  --color-night: #0a1620;
+  --color-night-2: #12232f;
+
+  /* shadcn bridge */
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-brand);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-subtle);
+  --color-secondary-foreground: var(--color-text);
+  --color-muted: var(--color-subtle);
+  --color-muted-foreground: var(--color-text-2);
+  --color-accent: var(--color-brand-soft);
+  --color-accent-foreground: var(--color-brand);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line-strong);
+  --color-ring: var(--color-brand);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-pop: 0 8px 24px rgb(16 24 40 / 0.12), 0 2px 6px rgb(16 24 40 / 0.06);
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-line;
   }
   html {
     @apply font-sans antialiased;
-    background: var(--color-page);
+    background: var(--color-canvas);
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply text-ink;
-    background: var(--color-page);
+    @apply text-text;
+    background: var(--color-canvas);
     font-size: 15px;
-    line-height: 1.45;
+    line-height: 1.5;
+    font-feature-settings: "tnum" 1, "ss01" 0;
   }
   h1, h2, h3 {
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.011em;
+    line-height: 1.25;
   }
   ::selection {
-    background: var(--color-mark);
-    color: var(--color-ink);
+    background: var(--color-brand-line);
   }
   :focus-visible {
-    outline: 3px solid var(--color-ink);
+    outline: 2px solid var(--color-brand);
     outline-offset: 2px;
+    border-radius: 4px;
+  }
+  button, [role="tab"], select {
+    touch-action: manipulation;
   }
 }
 
 @layer components {
-  .num {
-    font-family: var(--font-mono);
-    font-weight: 700;
+  /* queue numbers: same face, tabular so digits line up in a list */
+  .ticket-no {
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
-  /* the yellow marker pen, for the one thing on a screen you must not miss */
-  .marker {
-    background: linear-gradient(transparent 8%, var(--color-mark) 8%, var(--color-mark) 92%, transparent 92%);
-    padding: 0 0.18em;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
-  }
-  /* receipt paper: zig-zag cut edges top and bottom */
-  .receipt {
-    --z: 9px;
-    background: var(--color-white);
-    -webkit-mask:
-      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--z) * 2) 51% repeat-x,
-      conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / calc(var(--z) * 2) 51% repeat-x;
-    mask:
-      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--z) * 2) 51% repeat-x,
-      conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / calc(var(--z) * 2) 51% repeat-x;
-  }
-  .receipt-wrap {
-    filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.18)) drop-shadow(0 0 1px rgb(0 0 0 / 0.35));
-  }
-  .dots {
-    border-top: 2px dotted var(--color-ink);
-  }
-  @keyframes tick {
-    from { opacity: 0; transform: translateY(-0.08em); }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(2px); }
     to { opacity: 1; transform: none; }
   }
-  .tick { animation: tick 180ms steps(3, end) both; }
-  @keyframes blink {
-    50% { opacity: 0.25; }
+  .fade-in { animation: fade-in 160ms ease-out both; }
+  @keyframes pulse-dot {
+    50% { opacity: 0.35; }
   }
-  .blink { animation: blink 1.4s steps(2, jump-none) infinite; }
+  .pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--color-subtle) 25%, #e6e9ee 50%, var(--color-subtle) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+    border-radius: 6px;
+  }
   @media (prefers-reduced-motion: reduce) {
-    .tick, .blink { animation: none; }
+    .fade-in, .pulse-dot, .skeleton { animation: none; }
   }
 }

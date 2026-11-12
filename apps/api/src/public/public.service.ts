@@ -34,9 +34,20 @@ export class PublicService {
   async listServicePoints(slug: string) {
     const tenant = await this.resolveTenant(slug);
     const points = await this.tenantPrisma.run(tenant.id, (tx) =>
-      tx.servicePoint.findMany({ where: { tenantId: tenant.id, isActive: true }, orderBy: { name: 'asc' } }),
+      tx.servicePoint.findMany({ where: { tenantId: tenant.id }, orderBy: [{ isActive: 'desc' }, { name: 'asc' }] }),
     );
-    return { clinic: tenant.name, servicePoints: points.map((p) => ({ id: p.id, name: p.name, code: p.code })) };
+    // Closed services are listed (so patients see why they cannot pick them) but joining one is refused by the API.
+    return {
+      clinic: tenant.name,
+      servicePoints: points.map((p) => ({
+        id: p.id,
+        name: p.name,
+        code: p.code,
+        description: p.description,
+        icon: p.icon,
+        closed: !p.isActive,
+      })),
+    };
   }
 
   private async pointByCode(tx: Tx, tenantId: string, code: string) {
@@ -105,6 +116,7 @@ export class PublicService {
           : 0;
       const tenant = await this.prisma.tenant.findUnique({ where: { id: ticket.tenantId } });
       return {
+        clinicName: tenant?.name ?? '',
         clinicSlug: tenant?.slug ?? '',
         servicePointCode: point?.code ?? '',
         number: ticket.number,

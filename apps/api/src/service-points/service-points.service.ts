@@ -11,7 +11,15 @@ export class ServicePointsService {
   create(tenantId: string, body: CreateServicePointBody) {
     return this.tenantPrisma.run(tenantId, (tx) =>
       tx.servicePoint.create({
-        data: { tenantId, name: body.name, code: body.code, prefix: body.prefix, maxWaiting: body.maxWaiting },
+        data: {
+          tenantId,
+          name: body.name,
+          code: body.code,
+          prefix: body.prefix,
+          maxWaiting: body.maxWaiting,
+          description: body.description || null,
+          icon: body.icon ?? null,
+        },
       }),
     );
   }
@@ -28,7 +36,13 @@ export class ServicePointsService {
       if (!existing) throw notFound('Service point');
       return tx.servicePoint.update({
         where: { id },
-        data: { name: body.name, isActive: body.isActive, maxWaiting: body.maxWaiting },
+        data: {
+          name: body.name,
+          isActive: body.isActive,
+          maxWaiting: body.maxWaiting,
+          description: body.description === undefined ? undefined : body.description || null,
+          icon: body.icon,
+        },
       });
     });
   }

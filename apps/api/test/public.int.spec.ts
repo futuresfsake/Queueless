@@ -117,6 +117,63 @@ describe('US-5 / US-6 patient join and ticket page', () => {
   });
 });
 
+describe('service details and closed services', () => {
+  it('a service point carries an optional hint and icon, validated', async () => {
+    const created = await t.http
+      .post('/api/v1/service-points')
+      .set(bearer(b.admin))
+      .send({ name: 'Laboratory', code: 'lab', prefix: 'LB', description: 'Blood tests, results.', icon: 'lab' });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({ description: 'Blood tests, results.', icon: 'lab' });
+
+    const bad = await t.http
+      .post('/api/v1/service-points')
+      .set(bearer(b.admin))
+      .send({ name: 'X', code: 'x', prefix: 'XX', icon: 'skull' });
+    expect(bad.status).toBe(400);
+    const tooLong = await t.http
+      .post('/api/v1/service-points')
+      .set(bearer(b.admin))
+      .send({ name: 'Y', code: 'y', prefix: 'YY', description: 'a'.repeat(141) });
+    expect(tooLong.status).toBe(400);
+
+    const list = await t.http.get(`/api/v1/public/c/${b.slug}/service-points`);
+    expect(list.body.servicePoints).toContainEqual(
+      expect.objectContaining({ code: 'lab', description: 'Blood tests, results.', icon: 'lab', closed: false }),
+    );
+  });
+
+  it('a closed service is still listed, flagged closed, and cannot be joined', async () => {
+    const sp = (
+      await t.http.post('/api/v1/service-points').set(bearer(b.admin)).send({ name: 'Dental', code: 'dental', prefix: 'DN' })
+    ).body.id;
+    await t.http.patch(`/api/v1/service-points/${sp}`).set(bearer(b.admin)).send({ isActive: false }).expect(200);
+
+    const list = await t.http.get(`/api/v1/public/c/${b.slug}/service-points`);
+    const dental = list.body.servicePoints.find((p: { code: string }) => p.code === 'dental');
+    expect(dental).toMatchObject({ closed: true });
+    // open services sort first
+    const firstClosed = list.body.servicePoints.findIndex((p: { closed: boolean }) => p.closed);
+    expect(list.body.servicePoints.slice(firstClosed).every((p: { closed: boolean }) => p.closed)).toBe(true);
+
+    const join = await t.http
+      .post(`/api/v1/public/c/${b.slug}/service-points/dental/tickets`)
+      .set(key())
+      .send({ patientName: 'X', consent: true });
+    expect(join.status).toBe(409);
+    expect(join.body.error.code).toBe('SERVICE_POINT_INACTIVE');
+  });
+
+  it('the hint and icon can be edited and cleared', async () => {
+    const sp = (
+      await t.http.post('/api/v1/service-points').set(bearer(b.admin)).send({ name: 'Maternal', code: 'maternal', prefix: 'MT', icon: 'baby', description: 'Prenatal care.' })
+    ).body.id;
+    const cleared = await t.http.patch(`/api/v1/service-points/${sp}`).set(bearer(b.admin)).send({ description: null, icon: null });
+    expect(cleared.status).toBe(200);
+    expect(cleared.body).toMatchObject({ description: null, icon: null });
+  });
+});
+
 describe('US-7 patient cancel', () => {
   it('cancels a waiting ticket once; a second cancel is INVALID_TRANSITION', async () => {
     const j = await join(a, 'Cancel Me');

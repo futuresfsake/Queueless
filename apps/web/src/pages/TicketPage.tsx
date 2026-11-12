@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BellRing, CheckCircle2, Clock, Stethoscope, XCircle } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
-import { Wordmark } from '../components/brand';
+import { ClinicHeader, PoweredBy } from '../components/brand';
+import { Alert, Skeleton } from '../components/feedback';
+import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { api } from '../lib/api';
 import { cn } from '../lib/utils';
@@ -8,6 +12,7 @@ import { usePublicSocket } from '../lib/usePublicSocket';
 import { t } from '../strings';
 
 interface TicketView {
+  clinicName: string;
   clinicSlug: string;
   servicePointCode: string;
   number: string;
@@ -22,6 +27,7 @@ interface TicketView {
 export function TicketPage() {
   const { token = '' } = useParams();
   const qc = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
   const q = useQuery({
     queryKey: ['ticket', token],
     queryFn: () => api<TicketView>(`/public/t/${token}`, { auth: false }),
@@ -32,85 +38,148 @@ export function TicketPage() {
   const { connected } = usePublicSocket(q.data?.clinicSlug ?? null, q.data?.servicePointCode ?? null, refresh);
   const cancel = useMutation({
     mutationFn: () => api(`/public/t/${token}/cancel`, { method: 'POST', body: {}, auth: false }),
-    onSettled: refresh,
+    onSettled: () => {
+      setConfirming(false);
+      refresh();
+    },
   });
 
-  if (q.isError) return <Notice title={t.patient.ticketNotFoundTitle}>{t.patient.ticketNotFound}</Notice>;
-  if (!q.data) return <Notice>{t.patient.loading}</Notice>;
+  if (q.isError) {
+    return (
+      <Frame>
+        <h1 className="text-2xl">{t.patient.ticketNotFoundTitle}</h1>
+        <p className="mt-2 text-text-2">{t.patient.ticketNotFound}</p>
+      </Frame>
+    );
+  }
+  if (!q.data) {
+    return (
+      <Frame>
+        <Skeleton className="h-52" />
+        <Skeleton className="mt-4 h-24" />
+      </Frame>
+    );
+  }
   const v = q.data;
-
   const called = v.status === 'CALLED';
   const waiting = v.status === 'WAITING';
+  const serving = v.status === 'SERVING';
   const canCancel = waiting || called;
 
   return (
-    // When it is your turn the whole screen goes yellow, so you notice it from across the room.
-    <div className={cn('min-h-dvh transition-colors duration-200', called ? 'bg-mark' : 'bg-page')}>
-      <main className="mx-auto flex min-h-dvh max-w-sm flex-col px-5 pb-8 pt-5">
-        <div className="flex items-center justify-between">
-          <Wordmark className="text-base" />
-          <span className="font-mono text-xs font-semibold uppercase">{v.servicePoint}</span>
-        </div>
+    <Frame clinic={v.clinicName} sub={v.servicePoint}>
+      {!connected && (
+        <Alert tone="warn" className="mb-4">
+          {t.patient.reconnecting}
+        </Alert>
+      )}
 
-        {!connected && (
-          <p role="status" className="mt-4 border-2 border-ink bg-white px-3 py-2 text-[0.8125rem] font-medium">
-            <span className="blink mr-2 inline-block size-2 bg-alarm align-middle" />
-            {t.patient.reconnecting}
-          </p>
+      {/* the one thing to know right now */}
+      {called && (
+        <div role="status" className="mb-4 flex items-start gap-3 rounded-xl border border-ok-line bg-ok-soft p-4">
+          <BellRing className="mt-0.5 size-6 shrink-0 text-ok" />
+          <div>
+            <p className="text-lg font-semibold text-ok">{t.patient.yourTurnTitle}</p>
+            <p className="text-sm text-text">{t.patient.yourTurnBody}</p>
+          </div>
+        </div>
+      )}
+
+      <section className="rounded-xl border border-line bg-surface p-6 text-center shadow-card">
+        <StatusBadge status={v.status} />
+        <p className="mt-5 text-sm text-text-2">{t.patient.yourNumber}</p>
+        <p
+          key={v.number}
+          data-testid="ticket-number"
+          className="ticket-no fade-in mt-1 whitespace-nowrap text-[clamp(3.25rem,18vw,4.5rem)] leading-none"
+        >
+          {v.number}
+        </p>
+        {v.patientName && <p className="mt-3 text-[0.9375rem] text-text-2">{v.patientName}</p>}
+
+        {(waiting || called || serving) && (
+          <dl className="mt-6 grid grid-cols-2 divide-x divide-line rounded-lg border border-line bg-canvas">
+            {waiting ? (
+              <Figure label={t.patient.aheadOfYou} value={String(v.peopleAhead)} />
+            ) : (
+              <Figure label={t.patient.status} value={called ? t.patient.statusCalled : t.patient.statusServing} />
+            )}
+            <Figure label={t.patient.nowServing} value={v.nowServing ?? t.patient.nobodyYet} />
+          </dl>
         )}
 
-        {called && (
-          <p className="mt-6 text-[2.1rem] font-bold leading-[1.05]">
-            {t.patient.yourTurnTitle}
-            <span className="mt-1 block text-lg font-medium">{t.patient.yourTurnBody}</span>
-          </p>
-        )}
+        <p className="mt-5 text-sm text-text-2">
+          <StatusLine v={v} />
+        </p>
+      </section>
 
-        <div className={cn('receipt-wrap', called ? 'mt-6' : 'mt-8')}>
-          <section className="receipt px-6 pb-8 pt-9 font-mono">
-            <p className="text-center text-xs font-semibold uppercase tracking-widest">{v.servicePoint}</p>
-            <div className="dots my-3" />
-            <p className="text-center text-[0.8125rem] uppercase">{t.patient.yourNumber}</p>
-            <p
-              key={v.number}
-              data-testid="ticket-number"
-              className="num tick my-1 whitespace-nowrap text-center text-[clamp(3.6rem,19vw,5rem)] leading-none"
-            >
-              {v.number}
-            </p>
-            {v.patientName && <p className="text-center text-sm">{v.patientName}</p>}
-            <div className="dots my-4" />
-
-            <dl className="space-y-2 text-[0.9375rem]">
-              {waiting && (
-                <div className="flex items-baseline justify-between">
-                  <dt className="uppercase">{t.patient.aheadOfYou}</dt>
-                  <dd className="num text-3xl">{v.peopleAhead}</dd>
-                </div>
-              )}
-              <div className="flex items-baseline justify-between">
-                <dt className="uppercase">{t.patient.nowServing}</dt>
-                <dd className="num text-3xl">{v.nowServing ?? '--'}</dd>
-              </div>
-            </dl>
-
-            <div className="dots my-4" />
-            <p className="text-center text-sm font-semibold uppercase leading-snug">
-              <StatusLine v={v} />
-            </p>
-          </section>
-        </div>
-
-        {canCancel && (
-          <div className="mt-5 text-center">
-            <Button variant="quiet" size="sm" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
+      {canCancel && (
+        <div className="mt-5">
+          {!confirming ? (
+            <Button variant="ghost" className="w-full" onClick={() => setConfirming(true)}>
               {t.patient.cancel}
             </Button>
-          </div>
-        )}
+          ) : (
+            <div className="rounded-lg border border-danger-line bg-surface p-4">
+              <p className="text-sm font-medium">{t.patient.cancelConfirm}</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button variant="secondary" onClick={() => setConfirming(false)}>
+                  {t.patient.keepPlace}
+                </Button>
+                <Button variant="danger" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
+                  {t.patient.confirmCancel}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
-        <p className="mt-auto max-w-[19rem] pt-10 text-xs leading-relaxed text-grey">{t.patient.keepLink}</p>
-      </main>
+      <p className="mt-8 text-center text-xs leading-relaxed text-text-3">{t.patient.keepLink}</p>
+    </Frame>
+  );
+}
+
+function StatusBadge({ status }: { status: TicketView['status'] }) {
+  switch (status) {
+    case 'WAITING':
+      return (
+        <Badge tone="neutral">
+          <Clock /> {t.patient.statusWaiting}
+        </Badge>
+      );
+    case 'CALLED':
+      return (
+        <Badge tone="ok">
+          <BellRing /> {t.patient.statusCalled}
+        </Badge>
+      );
+    case 'SERVING':
+      return (
+        <Badge tone="brand">
+          <Stethoscope /> {t.patient.statusServing}
+        </Badge>
+      );
+    case 'SERVED':
+      return (
+        <Badge tone="ok">
+          <CheckCircle2 /> {t.patient.statusDone}
+        </Badge>
+      );
+    default:
+      return (
+        <Badge tone="neutral">
+          <XCircle /> {t.patient.statusClosed}
+        </Badge>
+      );
+  }
+}
+
+function Figure({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-3 py-3">
+      <dt className="text-xs text-text-2">{label}</dt>
+      <dd className="ticket-no mt-0.5 text-xl">{value}</dd>
     </div>
   );
 }
@@ -124,12 +193,12 @@ function StatusLine({ v }: { v: TicketView }) {
   return <>{t.patient.finished[v.status as 'SERVED' | 'SKIPPED' | 'NO_SHOW' | 'CANCELLED']}</>;
 }
 
-function Notice({ title, children }: { title?: string; children: React.ReactNode }) {
+function Frame({ children, clinic, sub }: { children: ReactNode; clinic?: string; sub?: string }) {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-start justify-center gap-3 px-6">
-      <Wordmark />
-      {title && <h1 className="mt-6 text-3xl">{title}</h1>}
-      <p className="text-grey">{children}</p>
+    <main className={cn('mx-auto min-h-dvh max-w-md px-4 pb-10 pt-6')}>
+      <div className="mb-6">{clinic ? <ClinicHeader name={clinic} sub={sub} /> : <p className="text-sm font-medium text-text-2">Queueless</p>}</div>
+      {children}
+      <PoweredBy />
     </main>
   );
 }
