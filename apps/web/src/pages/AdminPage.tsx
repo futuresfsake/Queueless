@@ -146,7 +146,7 @@ function NewServicePoint({ onDone }: { onDone: () => void }) {
       <Label htmlFor="sp-name">{t.admin.newServicePoint}</Label>
       <Input id="sp-name" placeholder={t.admin.spName} required value={name} onChange={(e) => setName(e.target.value)} />
       <div className="grid grid-cols-2 gap-2">
-        <Input placeholder={t.admin.spCode} required pattern="[a-z0-9-]{1,40}" value={code} onChange={(e) => setCode(e.target.value)} />
+        <Input placeholder={t.admin.spCode} required pattern="[a-z0-9\-]{1,40}" value={code} onChange={(e) => setCode(e.target.value)} />
         <Input placeholder={t.admin.spPrefix} required pattern="[A-Za-z]{1,3}" maxLength={3} value={prefix} onChange={(e) => setPrefix(e.target.value)} />
       </div>
       {msg(create.error) && <p role="alert" className="text-sm text-destructive">{msg(create.error)}</p>}
