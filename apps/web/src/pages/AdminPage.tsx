@@ -55,45 +55,37 @@ export function AdminPage() {
   return (
     <div className="min-h-dvh">
       <TopBar>
-        <Link className="text-ink-soft underline decoration-line-strong underline-offset-4 hover:text-ink" to="/staff">
-          {t.staff.title}
-        </Link>
-        <span className="text-ink-soft">{user?.email}</span>
+        <Link to="/staff">{t.staff.title}</Link>
+        <span className="text-white/70">{user?.email}</span>
         <Button variant="quiet" size="sm" onClick={signOut}>
           {t.staff.signOut}
         </Button>
       </TopBar>
 
-      <main className="mx-auto max-w-6xl px-5 pb-20 pt-8">
-        <p className="eyebrow">{t.admin.eyebrow}</p>
-        <h1 className="mt-1 text-[2.4rem] font-semibold">{t.admin.title}</h1>
+      <main className="mx-auto max-w-6xl px-5 pb-20 pt-7">
+        <h1 className="text-[2rem]">{t.admin.title}</h1>
         {slug && (
-          <p className="mt-2 text-sm text-ink-soft">
+          <p className="mt-2 text-sm">
             {t.admin.patientLink}{' '}
-            <a className="font-medium text-ink underline decoration-accent decoration-2 underline-offset-4" href={`/c/${slug}`} target="_blank" rel="noreferrer">
+            <a className="marker font-mono font-semibold" href={`/c/${slug}`} target="_blank" rel="noreferrer">
               {window.location.host}/c/{slug}
             </a>
           </p>
         )}
 
-        <div className="mt-10 grid gap-x-14 gap-y-12 lg:grid-cols-2">
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <Section title={t.admin.servicePoints} hint={t.admin.servicePointsHint}>
             <ul>
               {(points.data ?? []).map((p) => (
-                <li key={p.id} className="flex items-center gap-3 border-b border-line py-2.5">
-                  <span className="numeral w-9 text-[1.6rem]">{p.prefix}</span>
+                <li key={p.id} className="flex items-center gap-3 border-b border-rule px-3 py-2.5">
+                  <span className="num w-9 text-xl">{p.prefix}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{p.name}</span>
-                    <span className="font-mono text-xs text-ink-soft">{p.code}</span>
+                    <span className="font-mono text-xs text-grey">{p.code}</span>
                   </span>
                   {!p.isActive && <Badge>{t.admin.inactive}</Badge>}
                   {slug && (
-                    <a
-                      className="text-sm text-ink-soft underline decoration-line-strong underline-offset-4 hover:text-ink"
-                      href={`/tv/${slug}/${p.code}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a className="text-sm underline underline-offset-4" href={`/tv/${slug}/${p.code}`} target="_blank" rel="noreferrer">
                       {t.admin.openTv}
                     </a>
                   )}
@@ -113,25 +105,24 @@ export function AdminPage() {
           </Section>
         </div>
 
-        <div className="mt-12">
+        <div className="mt-6">
           <Section title={t.admin.slots} hint={t.admin.slotsHint}>
-            <ul className="grid gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid sm:grid-cols-2 lg:grid-cols-3">
               {(slots.data ?? []).slice(-12).map((s) => (
-                <li key={s.id} className="flex items-baseline justify-between gap-3 border-b border-line py-2.5">
+                <li key={s.id} className="flex items-center justify-between gap-3 border-b border-rule px-3 py-2.5">
                   <span>
-                    <span className="numeral text-[1.4rem]">
-                      {new Date(s.startsAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    <span className="num text-lg">
+                      {new Date(s.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                     </span>
-                    <span className="ml-2 text-xs text-ink-soft">
+                    <span className="ml-2 font-mono text-xs text-grey">
                       {new Date(s.startsAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                     </span>
-                    <span className="block truncate text-xs text-ink-soft">
+                    <span className="block truncate text-xs text-grey">
                       {points.data?.find((p) => p.id === s.servicePointId)?.name}
                     </span>
                   </span>
-                  <span className="numeral text-lg">
-                    {s.bookedCount}
-                    <span className="text-ink-soft">/{s.capacity}</span>
+                  <span className="num text-base">
+                    {s.bookedCount}/{s.capacity}
                   </span>
                 </li>
               ))}
@@ -146,19 +137,19 @@ export function AdminPage() {
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <section>
-      <div className="rule-strong pt-3">
-        <h2 className="text-[1.45rem] font-semibold">{title}</h2>
-        {hint && <p className="mt-0.5 text-[0.8125rem] text-ink-soft">{hint}</p>}
+    <section className="border-2 border-ink bg-white">
+      <div className="border-b-2 border-ink bg-page px-3 py-2">
+        <h2 className="text-sm font-bold uppercase tracking-wide">{title}</h2>
+        {hint && <p className="mt-0.5 text-xs text-grey">{hint}</p>}
       </div>
-      <div className="mt-2">{children}</div>
+      {children}
     </section>
   );
 }
 
 const FormError = ({ error }: { error: unknown }) =>
   msg(error) ? (
-    <p role="alert" className="text-sm font-medium text-alarm">
+    <p role="alert" className="text-sm font-semibold text-alarm">
       {msg(error)}
     </p>
   ) : null;
@@ -181,10 +172,10 @@ function NewServicePoint({ onDone }: { onDone: () => void }) {
     create.mutate();
   };
   return (
-    <form onSubmit={submit} className="mt-5 grid gap-3 rounded-md border border-line bg-surface/60 p-4">
-      <p className="eyebrow !text-ink">{t.admin.newServicePoint}</p>
+    <form onSubmit={submit} className="grid gap-2.5 p-3">
+      <p className="text-xs font-bold uppercase">{t.admin.newServicePoint}</p>
       <Input aria-label={t.admin.spName} placeholder={t.admin.spName} required value={name} onChange={(e) => setName(e.target.value)} />
-      <div className="grid grid-cols-[1fr_8.5rem] gap-3">
+      <div className="grid grid-cols-[1fr_8.5rem] gap-2.5">
         <Input aria-label={t.admin.spCode} placeholder={t.admin.spCode} required pattern="[a-z0-9\-]{1,40}" value={code} onChange={(e) => setCode(e.target.value)} />
         <Input aria-label={t.admin.spPrefix} placeholder={t.admin.spPrefix} required pattern="[A-Za-z]{1,3}" maxLength={3} value={prefix} onChange={(e) => setPrefix(e.target.value)} />
       </div>
@@ -202,9 +193,9 @@ function StaffRow({ u, onDone }: { u: StaffUser; onDone: () => void }) {
     onSuccess: onDone,
   });
   return (
-    <li className="flex items-center gap-3 border-b border-line py-2.5">
+    <li className="flex items-center gap-3 border-b border-rule px-3 py-2.5">
       <span className="min-w-0 flex-1 truncate">{u.email}</span>
-      <Badge variant={u.role === 'CLINIC_ADMIN' ? 'accent' : 'secondary'}>{u.role === 'CLINIC_ADMIN' ? t.admin.roleAdmin : t.admin.roleStaff}</Badge>
+      <Badge variant={u.role === 'CLINIC_ADMIN' ? 'mark' : 'secondary'}>{u.role === 'CLINIC_ADMIN' ? t.admin.roleAdmin : t.admin.roleStaff}</Badge>
       {!u.isActive && <Badge>{t.admin.inactive}</Badge>}
       {u.role === 'STAFF' && (
         <Button size="sm" variant="ghost" disabled={toggle.isPending} onClick={() => toggle.mutate()}>
@@ -231,8 +222,8 @@ function NewStaff({ onDone }: { onDone: () => void }) {
     create.mutate();
   };
   return (
-    <form onSubmit={submit} className="mt-5 grid gap-3 rounded-md border border-line bg-surface/60 p-4">
-      <p className="eyebrow !text-ink">{t.admin.newStaff}</p>
+    <form onSubmit={submit} className="grid gap-2.5 p-3">
+      <p className="text-xs font-bold uppercase">{t.admin.newStaff}</p>
       <Input type="email" aria-label={t.login.email} placeholder={t.login.email} required value={email} onChange={(e) => setEmail(e.target.value)} />
       <Input type="password" aria-label={t.admin.passwordHint} placeholder={t.admin.passwordHint} required minLength={12} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       <FormError error={create.error} />
@@ -259,11 +250,11 @@ function NewSlot({ points, onDone }: { points: ServicePoint[]; onDone: () => voi
   };
   if (points.length === 0) return null;
   return (
-    <form onSubmit={submit} className="mt-5 flex flex-wrap items-end gap-3 rounded-md border border-line bg-surface/60 p-4">
-      <p className="eyebrow !text-ink w-full">{t.admin.newSlot}</p>
+    <form onSubmit={submit} className="flex flex-wrap items-end gap-3 p-3">
+      <p className="w-full text-xs font-bold uppercase">{t.admin.newSlot}</p>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="slot-sp">{t.staff.servicePoint}</Label>
-        <select id="slot-sp" className="h-11 rounded-md border border-line-strong bg-white/70 px-3 text-[0.9375rem]" value={chosen} onChange={(e) => setSpId(e.target.value)}>
+        <select id="slot-sp" className="h-11 rounded-[2px] border-2 border-ink bg-white px-3 text-[0.9375rem]" value={chosen} onChange={(e) => setSpId(e.target.value)}>
           {points.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}

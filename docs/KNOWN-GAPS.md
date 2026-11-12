@@ -22,10 +22,11 @@ Last updated: 2026-11-12. This is the honest list of what is missing, unverified
 | **Performance numbers are local.** | Laptop, API in dev mode, Postgres in Docker on the same machine, one client, small data set, rate limit lifted for the race test. They show correctness under concurrency, not production capacity. |
 | **Reconnect after a real network drop** was not tested end to end. | Only the code path (refetch on socket connect) exists. |
 
-## Design (2026-11-12 redesign)
-- Reviewed by eye from Chromium screenshots at phone (390 px), laptop (1280 px) and TV (1920x1080) sizes, and re-ran the 17 functional browser checks on the new screens. **Not done:** a formal accessibility audit (only the main button contrast was calculated by hand), screen-reader testing, Firefox and Safari rendering, very small phones (under 360 px), TV on a real display, and testing the fonts with a Cebuano or Filipino string set.
-- Fonts (Fraunces, Public Sans, Barlow Condensed) are bundled from npm, not loaded from a CDN.
-- The ticket "bites" use CSS masks; very old browsers will show a plain rectangle.
+## Design (2026-11-12, second pass)
+- The first redesign (cream paper, serif headings, orange accent) was rejected because it looked like a generated page. Replaced the same day with a different identity: white and black stock, a yellow marker accent, square edges, ruled tables, monospace numbers, a receipt-style patient ticket, and a red-on-black LED board for the TV.
+- Reviewed by eye from Chromium screenshots at phone (390 px), laptop (1280 px) and TV (1920x1080) sizes, and the 17 functional browser checks pass on the new screens. **Not done:** a formal accessibility audit (contrast was reasoned about, not measured with a tool, and the red LED digits and yellow marker were not checked for colour-blind users), screen-reader testing, Firefox and Safari rendering, very small phones (under 360 px), the TV on a real display, and any testing with real patients or staff. "Looks hand-made" is a taste judgement, not a tested result.
+- Fonts (IBM Plex Sans and Mono) are bundled from npm, not loaded from a CDN.
+- The receipt edge uses CSS masks; very old browsers will show a plain rectangle.
 
 ## Known weaker points (by design for the MVP)
 - **Single API server.** Rate limits and login throttling are in memory; a second server would not share them (ADR-005). Sockets are a single Socket.IO server with no Redis adapter.

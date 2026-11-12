@@ -101,79 +101,57 @@ export function StaffPage() {
   return (
     <div className="min-h-dvh">
       <TopBar>
-        {user?.role === 'CLINIC_ADMIN' && (
-          <Link className="text-ink-soft underline decoration-line-strong underline-offset-4 hover:text-ink" to="/admin">
-            {t.admin.title}
-          </Link>
-        )}
-        <span className="text-ink-soft">{user?.email}</span>
+        {user?.role === 'CLINIC_ADMIN' && <Link to="/admin">{t.admin.title}</Link>}
+        <span className="text-white/70">{user?.email}</span>
         <Button variant="quiet" size="sm" onClick={signOut}>
           {t.staff.signOut}
         </Button>
       </TopBar>
 
       {!connected && (
-        <p role="status" className="flex items-center justify-center gap-2 bg-warn-soft px-5 py-2 text-[0.8125rem] font-medium text-warn">
-          <span className="breathe size-2 rounded-full bg-warn" />
+        <p role="status" className="bg-alarm px-5 py-2 text-center text-[0.8125rem] font-semibold text-white">
+          <span className="blink mr-2 inline-block size-2 bg-white align-middle" />
           {t.staff.reconnecting}
         </p>
       )}
 
-      <main className="mx-auto max-w-6xl px-5 pb-16 pt-7">
-        {points.isSuccess && active.length === 0 && <p className="text-ink-soft">{t.staff.noServicePoints}</p>}
+      <main className="mx-auto max-w-6xl px-5 pb-16 pt-6">
+        {points.isSuccess && active.length === 0 && <p className="text-grey">{t.staff.noServicePoints}</p>}
 
         {active.length > 0 && (
           <>
-            <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-              <div>
-                <p className="eyebrow">{t.staff.servicePoint}</p>
-                {active.length <= 4 ? (
-                  <div role="tablist" className="mt-2 flex flex-wrap gap-x-6 gap-y-1">
-                    {active.map((p) => (
-                      <button
-                        key={p.id}
-                        role="tab"
-                        aria-selected={p.id === servicePointId}
-                        onClick={() => setServicePointId(p.id)}
-                        className={cn(
-                          'border-b-2 pb-1 font-display text-[1.75rem] font-semibold leading-tight transition-colors',
-                          p.id === servicePointId ? 'border-accent text-ink' : 'border-transparent text-ink-soft/70 hover:text-ink',
-                        )}
-                      >
-                        {p.name}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <select
-                    aria-label={t.staff.servicePoint}
-                    className="mt-2 h-11 rounded-md border border-line-strong bg-surface px-3 font-display text-xl"
-                    value={servicePointId ?? ''}
-                    onChange={(e) => setServicePointId(e.target.value)}
+            <div className="flex flex-wrap items-stretch justify-between gap-4">
+              <div role="tablist" aria-label={t.staff.servicePoint} className="flex flex-wrap gap-2">
+                {active.map((p) => (
+                  <button
+                    key={p.id}
+                    role="tab"
+                    aria-selected={p.id === servicePointId}
+                    onClick={() => setServicePointId(p.id)}
+                    className={cn(
+                      'h-11 border-2 border-ink px-5 text-[0.9375rem] font-bold',
+                      p.id === servicePointId ? 'bg-ink text-white' : 'bg-white hover:bg-mark',
+                    )}
                   >
-                    {active.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                    {p.name}
+                  </button>
+                ))}
               </div>
 
-              <div className="flex items-center gap-5">
-                <div className="text-right">
-                  <p className="numeral text-[2.6rem]">{waiting.length}</p>
-                  <p className="eyebrow -mt-0.5">{t.staff.waitingCount}</p>
-                </div>
+              <div className="flex items-center gap-4">
+                <p className="text-right leading-none">
+                  <span className="num block text-[2.4rem]">{waiting.length}</span>
+                  <span className="text-xs font-semibold uppercase">{t.staff.waitingCount}</span>
+                </p>
                 <Button
                   variant="accent"
                   size="lg"
-                  className="h-14 px-7 text-[1.05rem]"
+                  className="h-14 px-6 text-[1.05rem]"
                   disabled={callNext.isPending || waiting.length === 0}
                   onClick={() => callNext.mutate(newKey())}
                 >
                   {t.staff.callNext}
-                  <kbd className="rounded-[3px] border border-white/40 px-1.5 py-px font-num text-[0.75rem] font-semibold uppercase tracking-wider text-white/90">
+                  <kbd className="border border-current px-1.5 py-px font-mono text-[0.6875rem] font-semibold uppercase">
                     {t.staff.callNextHint}
                   </kbd>
                 </Button>
@@ -181,13 +159,13 @@ export function StaffPage() {
             </div>
 
             {notice && (
-              <p role="alert" className="mt-5 border-l-[3px] border-accent bg-surface px-4 py-2.5 text-sm">
+              <p role="alert" className="mt-4 border-2 border-ink bg-mark px-4 py-2.5 text-sm font-semibold">
                 {notice}
               </p>
             )}
 
-            <div className="mt-8 grid gap-x-10 gap-y-10 lg:grid-cols-[1.5fr_0.85fr_1.05fr]">
-              <Column title={t.staff.called} tone="go" tickets={byStatus('CALLED')}>
+            <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_0.9fr_1.05fr]">
+              <Column title={t.staff.called} highlight tickets={byStatus('CALLED')}>
                 {(x) => (
                   <>
                     <Button size="sm" onClick={() => run(x.id, 'start')}>{t.staff.start}</Button>
@@ -201,7 +179,7 @@ export function StaffPage() {
               </Column>
               <Column title={t.staff.waiting} tickets={waiting} numbered>
                 {(x) => (
-                  <Button size="sm" variant="ghost" className="text-ink-soft" onClick={() => run(x.id, 'cancel')}>
+                  <Button size="sm" variant="ghost" className="text-grey" onClick={() => run(x.id, 'cancel')}>
                     {t.staff.cancel}
                   </Button>
                 )}
@@ -216,37 +194,37 @@ export function StaffPage() {
   );
 }
 
-/** One status column as a ledger: ruled rows, number first, actions on the right. */
+/** One status column as a plain ruled table: number first, name, actions on the right. */
 function Column({
   title,
   tickets,
-  tone,
+  highlight,
   numbered,
   children,
 }: {
   title: string;
   tickets: Ticket[];
-  tone?: 'go';
+  highlight?: boolean;
   numbered?: boolean;
   children: (t: Ticket) => ReactNode;
 }) {
   return (
-    <section>
-      <div className={cn('flex items-baseline justify-between border-t-[1.5px] pt-2.5', tone === 'go' ? 'border-go' : 'border-ink')}>
-        <h2 className="eyebrow !text-ink">{title}</h2>
-        <span className="numeral text-xl text-ink-soft">{tickets.length}</span>
+    <section className="border-2 border-ink bg-white">
+      <div className={cn('flex items-center justify-between border-b-2 border-ink px-3 py-2', highlight ? 'bg-mark' : 'bg-page')}>
+        <h2 className="text-sm font-bold uppercase tracking-wide">{title}</h2>
+        <span className="num text-lg">{tickets.length}</span>
       </div>
-      {tickets.length === 0 && <p className="py-5 text-sm text-ink-soft">{t.staff.empty}</p>}
+      {tickets.length === 0 && <p className="px-3 py-4 text-sm text-grey">{t.staff.empty}</p>}
       <ul>
         {tickets.map((x, i) => (
           <li
             key={x.id}
             data-ticket={x.number}
-            className={cn('flex items-center gap-3 border-b border-line py-3', tone === 'go' && 'border-l-[3px] border-l-go bg-go-soft/50 pl-3')}
+            className="flex items-center gap-2.5 border-b border-rule px-3 py-2 last:border-b-0"
           >
-            {numbered && <span className="numeral w-4 text-sm text-ink-soft/70">{i + 1}</span>}
-            <span className="numeral text-[1.9rem]">{x.number}</span>
-            <span className="min-w-0 flex-1 truncate text-sm text-ink-soft">{x.patientName}</span>
+            {numbered && <span className="num w-4 text-xs text-grey">{i + 1}</span>}
+            <span className="num text-[1.4rem]">{x.number}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">{x.patientName}</span>
             <div className="flex shrink-0 items-center gap-1">{children(x)}</div>
           </li>
         ))}
@@ -292,12 +270,11 @@ function WalkIn({
   };
 
   return (
-    <section className="mt-14">
-      <div className="rule-strong pt-3">
-        <h2 className="text-xl font-semibold">{t.staff.walkIn}</h2>
-        <p className="mt-0.5 text-[0.8125rem] text-ink-soft">{t.staff.walkInHint}</p>
+    <section className="mt-10 border-2 border-ink bg-white">
+      <div className="border-b-2 border-ink bg-page px-3 py-2">
+        <h2 className="text-sm font-bold uppercase tracking-wide">{t.staff.walkIn}</h2>
       </div>
-      <form onSubmit={submit} className="mt-4 grid items-end gap-x-4 gap-y-4 sm:grid-cols-[1fr_1fr_auto]">
+      <form onSubmit={submit} className="grid items-end gap-x-4 gap-y-3 p-4 sm:grid-cols-[1fr_1fr_auto]">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="pname">{t.staff.patientName}</Label>
           <Input id="pname" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
@@ -309,9 +286,11 @@ function WalkIn({
         <Button type="submit" disabled={add.isPending || !consent}>
           {t.staff.add}
         </Button>
-        <label className="flex cursor-pointer items-start gap-2.5 text-[0.8125rem] text-ink-soft sm:col-span-3">
-          <input type="checkbox" className="mt-0.5 size-4 accent-[var(--color-accent)]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          {t.staff.consent}
+        <label className="flex cursor-pointer items-start gap-2.5 text-[0.8125rem] sm:col-span-3">
+          <input type="checkbox" className="mt-0.5 size-4 accent-black" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+          <span>
+            {t.staff.consent} <span className="text-grey">{t.staff.walkInHint}</span>
+          </span>
         </label>
       </form>
     </section>

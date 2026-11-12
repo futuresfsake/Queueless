@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { TicketGlyph } from '../components/brand';
 import { api } from '../lib/api';
 import { usePublicSocket } from '../lib/usePublicSocket';
 import { t } from '../strings';
@@ -19,10 +18,10 @@ function useClock() {
     const id = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(id);
   }, []);
-  return now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-/** US-16: the waiting-room TV. Numbers only, never names. Read from the back of the room. */
+/** US-16: the waiting-room board. Numbers only, never names. Red LED digits on black, like the real ones. */
 export function TvPage() {
   const { slug = '', code = '' } = useParams();
   const qc = useQueryClient();
@@ -37,8 +36,8 @@ export function TvPage() {
 
   if (q.isError) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-ink px-8 text-center text-paper">
-        <p className="font-display text-4xl">{t.patient.queueNotFound}</p>
+      <main className="grid min-h-dvh place-items-center bg-black px-8 text-white">
+        <p className="font-mono text-3xl">{t.patient.queueNotFound}</p>
       </main>
     );
   }
@@ -46,39 +45,35 @@ export function TvPage() {
   const next = d?.nextUp ?? [];
 
   return (
-    <main className="flex min-h-dvh flex-col bg-ink text-paper">
-      <header className="flex items-start justify-between gap-6 px-[4vw] pt-[3vh]">
-        <div>
-          <p className="flex items-center gap-3 font-display text-[clamp(1.4rem,2.4vw,2.6rem)] font-semibold">
-            <TicketGlyph className="size-[1.1em] text-accent" />
-            {d?.clinic}
-          </p>
-          <p className="eyebrow mt-1 !text-paper/55 !text-[clamp(0.9rem,1.3vw,1.4rem)]">{d?.servicePoint}</p>
-        </div>
-        <p className="numeral text-[clamp(1.6rem,2.6vw,3rem)] text-paper/70">{clock}</p>
+    <main className="flex min-h-dvh flex-col bg-black font-mono text-white">
+      <header className="flex items-baseline justify-between gap-6 border-b-2 border-white/20 px-[3vw] py-[2vh]">
+        <p className="font-sans text-[clamp(1.2rem,2.2vw,2.4rem)] font-bold">
+          {d?.clinic} <span className="font-medium text-white/50">/ {d?.servicePoint}</span>
+        </p>
+        <p className="num text-[clamp(1.4rem,2.4vw,2.8rem)] text-white/70">{clock}</p>
       </header>
 
-      <div className="grid flex-1 grid-cols-1 gap-[4vw] px-[4vw] pb-[5vh] pt-[3vh] lg:grid-cols-[1.7fr_1fr]">
-        <section className="flex flex-col justify-center">
-          <p className="eyebrow !text-accent !text-[clamp(1.1rem,1.8vw,2rem)]">{t.patient.nowServing}</p>
+      <div className="grid flex-1 grid-cols-1 lg:grid-cols-[1.9fr_1fr]">
+        <section className="flex flex-col justify-center px-[3vw] py-[3vh]">
+          <p className="text-[clamp(1.2rem,2vw,2.2rem)] font-semibold uppercase tracking-[0.2em] text-white/60">{t.patient.nowServing}</p>
           <p
             key={d?.nowServing ?? 'none'}
             data-testid="now-serving"
-            className="numeral land mt-[1vh] text-[clamp(7rem,24vw,26rem)] leading-[0.82] text-paper"
+            className="num tick mt-[1vh] whitespace-nowrap text-[clamp(6rem,21vw,24rem)] leading-[0.9] text-led [text-shadow:0_0_0.3em_rgb(255_59_36/0.35)]"
           >
-            {d?.nowServing ?? '-'}
+            {d?.nowServing ?? '---'}
           </p>
         </section>
 
-        <section className="flex flex-col border-paper/15 lg:border-l lg:pl-[3.5vw]">
-          <p className="eyebrow !text-paper/55 !text-[clamp(1.1rem,1.8vw,2rem)]">{t.patient.nextUp}</p>
-          <ol className="mt-[2vh] flex flex-col">
-            {next.length === 0 && <li className="font-display text-[clamp(1.4rem,2.2vw,2.6rem)] text-paper/45">{t.patient.nobodyWaiting}</li>}
+        <section className="border-t-2 border-white/20 px-[3vw] py-[3vh] lg:border-l-2 lg:border-t-0">
+          <p className="text-[clamp(1.2rem,2vw,2.2rem)] font-semibold uppercase tracking-[0.2em] text-white/60">{t.patient.nextUp}</p>
+          <ol className="mt-[2vh]">
+            {next.length === 0 && <li className="text-[clamp(1.4rem,2.2vw,2.6rem)] text-white/40">{t.patient.nobodyWaiting}</li>}
             {next.map((n, i) => (
               <li
                 key={n}
-                className="numeral border-t border-paper/12 py-[1.4vh] first:border-t-0"
-                style={{ fontSize: `clamp(2rem, ${Math.max(2.2, 5.4 - i * 0.7)}vw, ${Math.max(3, 7 - i)}rem)`, opacity: 1 - i * 0.14 }}
+                className="num border-t border-white/15 py-[1.2vh] first:border-t-0"
+                style={{ fontSize: `clamp(2.2rem, ${Math.max(2.6, 5.2 - i * 0.6)}vw, ${Math.max(3.2, 6.5 - i * 0.7)}rem)`, opacity: 1 - i * 0.13 }}
               >
                 {n}
               </li>
@@ -87,9 +82,7 @@ export function TvPage() {
         </section>
       </div>
 
-      {!connected && (
-        <p className="px-[4vw] pb-4 text-lg text-amber-300">{t.staff.reconnecting}</p>
-      )}
+      {!connected && <p className="blink border-t-2 border-led px-[3vw] py-2 text-lg text-led">{t.staff.reconnecting}</p>}
     </main>
   );
 }

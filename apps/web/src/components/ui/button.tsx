@@ -3,19 +3,18 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium outline-none transition-[background-color,color,box-shadow,transform] duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+  "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-[2px] border-2 border-ink font-semibold outline-none transition-colors duration-100 active:translate-y-px disabled:pointer-events-none disabled:border-rule disabled:bg-transparent disabled:text-grey/70",
   {
     variants: {
       variant: {
-        // ink: the everyday button
-        default: "bg-ink text-paper hover:bg-[#33312b]",
-        // vermilion: at most one per screen, the thing you came to do
-        accent: "bg-accent text-white shadow-[0_2px_0_var(--color-accent-deep)] hover:bg-accent-deep active:shadow-none",
-        outline: "border border-line-strong bg-surface text-ink hover:border-ink hover:bg-white",
-        ghost: "text-ink hover:bg-sunken",
-        // underlined text, for low-stakes actions that should not shout
-        quiet: "px-0 text-ink-soft underline decoration-line-strong underline-offset-4 hover:text-ink hover:decoration-ink",
-        destructive: "border border-line-strong bg-surface text-alarm hover:border-alarm hover:bg-white",
+        default: "bg-ink text-white hover:bg-white hover:text-ink",
+        // the marker: one per screen
+        accent: "bg-mark text-ink hover:bg-ink hover:text-mark",
+        outline: "bg-white text-ink hover:bg-ink hover:text-white",
+        ghost: "border-transparent text-ink hover:border-ink",
+        // plain underlined text
+        quiet: "border-transparent px-0 font-medium text-grey underline underline-offset-4 hover:text-ink",
+        destructive: "bg-white text-alarm !border-alarm hover:bg-alarm hover:text-white",
       },
       size: {
         sm: "h-8 px-3 text-[0.8125rem]",
