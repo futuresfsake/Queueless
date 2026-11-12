@@ -1,14 +1,14 @@
 import type { TicketAction, TicketStatus } from '@queueless/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/auth-store';
-import { Badge } from '../components/ui/badge';
+import { TopBar } from '../components/brand';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { api, ApiError } from '../lib/api';
+import { cn } from '../lib/utils';
 import { useQueueSocket } from '../lib/useQueueSocket';
 import { t } from '../strings';
 
@@ -42,9 +42,8 @@ export function StaffPage() {
     if (!servicePointId && active.length) setServicePointId(active[0].id);
   }, [servicePointId, active]);
 
-  const queueKey = ['queue', servicePointId];
   const queue = useQuery({
-    queryKey: queueKey,
+    queryKey: ['queue', servicePointId],
     queryFn: () => api<QueueSnapshot>(`/queue/${servicePointId}`),
     enabled: !!servicePointId,
   });
@@ -96,121 +95,167 @@ export function StaffPage() {
 
   const tickets = queue.data?.tickets ?? [];
   const byStatus = (s: TicketStatus) => tickets.filter((x) => x.status === s);
+  const waiting = byStatus('WAITING');
   const run = (id: string, action: TicketAction) => act.mutate({ id, action, key: newKey() });
 
   return (
-    <main className="mx-auto max-w-5xl p-4 flex flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">{t.staff.title}</h1>
-        <div className="flex items-center gap-3 text-sm">
-          {user?.role === 'CLINIC_ADMIN' && (
-            <Link className="underline" to="/admin">
-              {t.admin.title}
-            </Link>
-          )}
-          <span className="text-muted-foreground">{user?.email}</span>
-          <Button variant="outline" size="sm" onClick={signOut}>
-            {t.staff.signOut}
-          </Button>
-        </div>
-      </header>
+    <div className="min-h-dvh">
+      <TopBar>
+        {user?.role === 'CLINIC_ADMIN' && (
+          <Link className="text-ink-soft underline decoration-line-strong underline-offset-4 hover:text-ink" to="/admin">
+            {t.admin.title}
+          </Link>
+        )}
+        <span className="text-ink-soft">{user?.email}</span>
+        <Button variant="quiet" size="sm" onClick={signOut}>
+          {t.staff.signOut}
+        </Button>
+      </TopBar>
 
       {!connected && (
-        <p role="status" className="rounded-md bg-amber-100 text-amber-900 px-3 py-2 text-sm">
+        <p role="status" className="flex items-center justify-center gap-2 bg-warn-soft px-5 py-2 text-[0.8125rem] font-medium text-warn">
+          <span className="breathe size-2 rounded-full bg-warn" />
           {t.staff.reconnecting}
         </p>
       )}
-      {notice && (
-        <p role="alert" className="rounded-md bg-muted px-3 py-2 text-sm">
-          {notice}
-        </p>
-      )}
 
-      {points.isSuccess && active.length === 0 && <p>{t.staff.noServicePoints}</p>}
+      <main className="mx-auto max-w-6xl px-5 pb-16 pt-7">
+        {points.isSuccess && active.length === 0 && <p className="text-ink-soft">{t.staff.noServicePoints}</p>}
 
-      {active.length > 0 && (
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="sp">{t.staff.servicePoint}</Label>
-            <select
-              id="sp"
-              className="h-9 rounded-md border bg-background px-2 text-sm"
-              value={servicePointId ?? ''}
-              onChange={(e) => setServicePointId(e.target.value)}
-            >
-              {active.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Button size="lg" disabled={callNext.isPending || byStatus('WAITING').length === 0} onClick={() => callNext.mutate(newKey())}>
-            {t.staff.callNext} <kbd className="ml-2 rounded border px-1 text-xs opacity-70">{t.staff.callNextHint}</kbd>
-          </Button>
-        </div>
-      )}
+        {active.length > 0 && (
+          <>
+            <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+              <div>
+                <p className="eyebrow">{t.staff.servicePoint}</p>
+                {active.length <= 4 ? (
+                  <div role="tablist" className="mt-2 flex flex-wrap gap-x-6 gap-y-1">
+                    {active.map((p) => (
+                      <button
+                        key={p.id}
+                        role="tab"
+                        aria-selected={p.id === servicePointId}
+                        onClick={() => setServicePointId(p.id)}
+                        className={cn(
+                          'border-b-2 pb-1 font-display text-[1.75rem] font-semibold leading-tight transition-colors',
+                          p.id === servicePointId ? 'border-accent text-ink' : 'border-transparent text-ink-soft/70 hover:text-ink',
+                        )}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <select
+                    aria-label={t.staff.servicePoint}
+                    className="mt-2 h-11 rounded-md border border-line-strong bg-surface px-3 font-display text-xl"
+                    value={servicePointId ?? ''}
+                    onChange={(e) => setServicePointId(e.target.value)}
+                  >
+                    {active.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
-      {servicePointId && (
-        <div className="grid gap-4 md:grid-cols-3">
-          <Column title={t.staff.called} tickets={byStatus('CALLED')}>
-            {(x) => (
-              <>
-                <Button size="sm" onClick={() => run(x.id, 'start')}>{t.staff.start}</Button>
-                <Button size="sm" variant="outline" onClick={() => run(x.id, 'no-show')}>{t.staff.noShow}</Button>
-                <Button size="sm" variant="outline" onClick={() => run(x.id, 'skip')}>{t.staff.skip}</Button>
-              </>
+              <div className="flex items-center gap-5">
+                <div className="text-right">
+                  <p className="numeral text-[2.6rem]">{waiting.length}</p>
+                  <p className="eyebrow -mt-0.5">{t.staff.waitingCount}</p>
+                </div>
+                <Button
+                  variant="accent"
+                  size="lg"
+                  className="h-14 px-7 text-[1.05rem]"
+                  disabled={callNext.isPending || waiting.length === 0}
+                  onClick={() => callNext.mutate(newKey())}
+                >
+                  {t.staff.callNext}
+                  <kbd className="rounded-[3px] border border-white/40 px-1.5 py-px font-num text-[0.75rem] font-semibold uppercase tracking-wider text-white/90">
+                    {t.staff.callNextHint}
+                  </kbd>
+                </Button>
+              </div>
+            </div>
+
+            {notice && (
+              <p role="alert" className="mt-5 border-l-[3px] border-accent bg-surface px-4 py-2.5 text-sm">
+                {notice}
+              </p>
             )}
-          </Column>
-          <Column title={t.staff.serving} tickets={byStatus('SERVING')}>
-            {(x) => <Button size="sm" onClick={() => run(x.id, 'complete')}>{t.staff.complete}</Button>}
-          </Column>
-          <Column title={t.staff.waiting} tickets={byStatus('WAITING')}>
-            {(x) => (
-              <Button size="sm" variant="outline" onClick={() => run(x.id, 'cancel')}>{t.staff.cancel}</Button>
-            )}
-          </Column>
-        </div>
-      )}
 
-      {servicePointId && <WalkInForm servicePointId={servicePointId} onDone={onSuccess} onError={onError} />}
-    </main>
+            <div className="mt-8 grid gap-x-10 gap-y-10 lg:grid-cols-[1.5fr_0.85fr_1.05fr]">
+              <Column title={t.staff.called} tone="go" tickets={byStatus('CALLED')}>
+                {(x) => (
+                  <>
+                    <Button size="sm" onClick={() => run(x.id, 'start')}>{t.staff.start}</Button>
+                    <Button size="sm" variant="ghost" onClick={() => run(x.id, 'no-show')}>{t.staff.noShow}</Button>
+                    <Button size="sm" variant="ghost" onClick={() => run(x.id, 'skip')}>{t.staff.skip}</Button>
+                  </>
+                )}
+              </Column>
+              <Column title={t.staff.serving} tickets={byStatus('SERVING')}>
+                {(x) => <Button size="sm" onClick={() => run(x.id, 'complete')}>{t.staff.complete}</Button>}
+              </Column>
+              <Column title={t.staff.waiting} tickets={waiting} numbered>
+                {(x) => (
+                  <Button size="sm" variant="ghost" className="text-ink-soft" onClick={() => run(x.id, 'cancel')}>
+                    {t.staff.cancel}
+                  </Button>
+                )}
+              </Column>
+            </div>
+
+            {servicePointId && <WalkIn servicePointId={servicePointId} onDone={onSuccess} onError={onError} />}
+          </>
+        )}
+      </main>
+    </div>
   );
 }
 
+/** One status column as a ledger: ruled rows, number first, actions on the right. */
 function Column({
   title,
   tickets,
+  tone,
+  numbered,
   children,
 }: {
   title: string;
   tickets: Ticket[];
-  children: (t: Ticket) => React.ReactNode;
+  tone?: 'go';
+  numbered?: boolean;
+  children: (t: Ticket) => ReactNode;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {title} <Badge variant="secondary">{tickets.length}</Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {tickets.length === 0 && <p className="text-sm text-muted-foreground">{t.staff.empty}</p>}
-        {tickets.map((x) => (
-          <div key={x.id} className="flex flex-col gap-2 rounded-md border p-2">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="font-mono font-semibold">{x.number}</span>
-              <span className="truncate text-sm">{x.patientName}</span>
-            </div>
-            <div className="flex flex-wrap gap-2">{children(x)}</div>
-          </div>
+    <section>
+      <div className={cn('flex items-baseline justify-between border-t-[1.5px] pt-2.5', tone === 'go' ? 'border-go' : 'border-ink')}>
+        <h2 className="eyebrow !text-ink">{title}</h2>
+        <span className="numeral text-xl text-ink-soft">{tickets.length}</span>
+      </div>
+      {tickets.length === 0 && <p className="py-5 text-sm text-ink-soft">{t.staff.empty}</p>}
+      <ul>
+        {tickets.map((x, i) => (
+          <li
+            key={x.id}
+            data-ticket={x.number}
+            className={cn('flex items-center gap-3 border-b border-line py-3', tone === 'go' && 'border-l-[3px] border-l-go bg-go-soft/50 pl-3')}
+          >
+            {numbered && <span className="numeral w-4 text-sm text-ink-soft/70">{i + 1}</span>}
+            <span className="numeral text-[1.9rem]">{x.number}</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-ink-soft">{x.patientName}</span>
+            <div className="flex shrink-0 items-center gap-1">{children(x)}</div>
+          </li>
         ))}
-      </CardContent>
-    </Card>
+      </ul>
+    </section>
   );
 }
 
-function WalkInForm({
+function WalkIn({
   servicePointId,
   onDone,
   onError,
@@ -247,31 +292,28 @@ function WalkInForm({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t.staff.walkIn}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pname">{t.staff.patientName}</Label>
-            <Input id="pname" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pphone">{t.staff.phone}</Label>
-            <Input id="pphone" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </div>
-          <label className="flex items-start gap-2 text-sm sm:col-span-2">
-            <input type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-            {t.staff.consent}
-          </label>
-          <div className="sm:col-span-2">
-            <Button type="submit" disabled={add.isPending || !consent}>
-              {t.staff.add}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <section className="mt-14">
+      <div className="rule-strong pt-3">
+        <h2 className="text-xl font-semibold">{t.staff.walkIn}</h2>
+        <p className="mt-0.5 text-[0.8125rem] text-ink-soft">{t.staff.walkInHint}</p>
+      </div>
+      <form onSubmit={submit} className="mt-4 grid items-end gap-x-4 gap-y-4 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="pname">{t.staff.patientName}</Label>
+          <Input id="pname" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="pphone">{t.staff.phone}</Label>
+          <Input id="pphone" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </div>
+        <Button type="submit" disabled={add.isPending || !consent}>
+          {t.staff.add}
+        </Button>
+        <label className="flex cursor-pointer items-start gap-2.5 text-[0.8125rem] text-ink-soft sm:col-span-3">
+          <input type="checkbox" className="mt-0.5 size-4 accent-[var(--color-accent)]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+          {t.staff.consent}
+        </label>
+      </form>
+    </section>
   );
 }

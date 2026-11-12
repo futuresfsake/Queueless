@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
-    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/public-sans": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
     "@queueless/shared": "workspace:*",
     "@tanstack/react-query": "^5.59.20",
     "class-variance-authority": "^0.7.1",
