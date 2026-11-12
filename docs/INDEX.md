@@ -5,6 +5,7 @@ Start here to find the right doc. All docs are **Draft** until reviewed; each ha
 | Question | Doc |
 |---|---|
 | Where are we right now? | [STATUS.md](STATUS.md) |
+| What is missing or unverified? | [KNOWN-GAPS.md](KNOWN-GAPS.md) |
 | What does this term mean? | [glossary.md](glossary.md) |
 | How do we name, structure, commit, and test? | [conventions.md](conventions.md) |
 | What are we building and why? | [product/PRD.md](product/PRD.md) |
