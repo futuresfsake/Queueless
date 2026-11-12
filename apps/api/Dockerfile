@@ -14,14 +14,16 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile --filter "@queueless/api..."
+RUN pnpm install --frozen-lockfile --filter "@queueless/api..." --filter "@queueless/web..."
 
 COPY . .
 RUN pnpm --filter @queueless/shared build \
  && pnpm --filter @queueless/api exec prisma generate \
- && pnpm --filter @queueless/api build
+ && pnpm --filter @queueless/api build  && pnpm --filter @queueless/web build
 
 ENV NODE_ENV=production
+# The API serves the built web app from here (one deploy, one URL, no CORS).
+ENV WEB_DIST=/app/apps/web/dist
 EXPOSE 3000
 # Nothing here needs root at runtime.
 USER node
