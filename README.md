@@ -2,36 +2,93 @@
 
 > Wait anywhere. Get called when it's your turn.
 
-Multi-tenant, real-time queue and appointment system for clinics and barangay health centers in the Philippines. Built as a portfolio project; correctness under concurrency is the focus.
+A multi-tenant, real-time queue and appointment system for clinics and barangay health centers in the Philippines. A portfolio project, built by one person. The focus is correctness under concurrency, and being honest about what has and has not been proven.
 
-**Status:** In development (MVP target: Nov 14, 2026). Nothing below is claimed until measured — see the validation table.
+**Status (2026-11-12):** the MVP is built and tested locally; it is **not deployed yet**, and there is no live demo link. Everything in the results table below was measured on a developer laptop. What is missing or unverified is listed in [docs/KNOWN-GAPS.md](docs/KNOWN-GAPS.md); please read it before judging the project.
 
-<!-- CI badge, live demo link, and demo GIF go here once available -->
+<!-- CI badge, live demo link and demo GIF go here once they exist. None exist yet. -->
 
-## Features (MVP)
-- Multi-tenant with PostgreSQL row-level security
-- Walk-in tickets and slot booking (web)
-- Live staff queue screen, TV "Now Serving" display, patient ticket page
-- Concurrency-safe "Call next" (`FOR UPDATE SKIP LOCKED`) with idempotency keys
-- Append-only event log
-- Roles: Super Admin, Clinic Admin, Staff, guest Patient
+## What works today
+- **Multi-tenant** data isolation with PostgreSQL row-level security (the API connects as a non-owner role). Tests check that one clinic cannot read or change another's data.
+- **Staff queue screen** (`/staff`): waiting, called and serving lists, **Call next** (button or Space), start, complete, no-show, skip, cancel, walk-in registration with consent. Updates live.
+- **Patient pages, no account needed:** join the queue or book a slot today (`/c/:clinic`), then a live ticket page (`/t/:token`) showing people ahead, now serving, and cancel.
+- **TV display** (`/tv/:clinic/:service-point`): "Now serving" and next numbers. Numbers only, never names.
+- **Clinic Admin setup** (`/admin`): service points, staff accounts, booking slots.
+- **Concurrency safety:** `Call next` uses `FOR UPDATE SKIP LOCKED`; slot booking takes a row lock; every queue-changing action carries an idempotency key stored in the same transaction as the change.
+- **Append-only event log:** the ticket status can be rebuilt from the events.
+- **Invariant auditor:** eight read-only SQL checks (A-1 to A-8) run from a command line. Each check is also tested to fail on deliberately corrupted data.
+- **Privacy:** only a name or nickname and an optional phone number are collected, consent is logged, and a purge job clears name and phone 30 days after the ticket was issued. Symptoms and diagnoses are never collected.
+- **Roles:** Super Admin, Clinic Admin, Staff, and guest Patient (by private ticket link).
 
-Post-MVP: two-way SMS (outbox), multi-stage visits, wait-time estimates, simulator.
+## Results (measured, with conditions)
+Where and how these were measured: one developer laptop (Windows 11), API in dev mode on the same machine, PostgreSQL 16 in Docker on the same machine, k6 in Docker, one client IP, a small data set, and the per-IP rate limit raised for the race test. These show correctness under concurrency; they are **not** a production capacity claim. Not run in CI, not run against a deployed instance. Date: 2026-11-12.
 
-## What's different
-- **Executable integrity proof:** an invariant auditor (read-only SQL) runs on demand, nightly, and in CI after the load tests. See [invariant-auditor](docs/tech/invariant-auditor.md).
-- **Concurrency-safe by design, with tests:** `SKIP LOCKED` call-next, row-locked booking, idempotency keys in the same transaction.
-- **Privacy by design:** name + optional phone only, consent logged, personal data cleared after 30 days, never symptoms.
-- **Built for the Philippines (post-MVP):** SMS-first access, priority lanes for senior/PWD/pregnant patients, Cebuano patient pages.
+| What | How | Result |
+|---|---|---|
+| No double-booking | k6: 200 concurrent bookings of the last place in one slot | 1 booked, 199 `SLOT_FULL`, 0 other responses; slot count exactly 1 |
+| No duplicate or skipped calls | k6: 3 desks calling 90 tickets at once | 90 distinct tickets, none left waiting, 0 errors |
+| Call-next latency | same run | p95 20.9 ms, median 16.7 ms, max 26.7 ms (90 calls, light load) |
+| Integrity checks A-1..A-8 | auditor after the k6 runs | all pass; each check also proven to fail on corrupted data |
+| Automated tests | Jest unit + Testcontainers integration (real Postgres) | 18 unit and 112 integration tests pass locally; CI passed on the last checked commit |
+| Browser behaviour | one scripted headless-Chromium pass (not in the repo) | 17 of 17 checks: login, join, live updates, Space to call, reconnect banner after stopping and restarting the API, admin create |
+| Crash recovery under load | API restarted mid-run | **not measured** |
+| Wait-time estimates, simulated day | simulator | **not built** |
+| Usability | 5 testers | **not done** |
+
+Details and caveats: [docs/testing/validation-results.md](docs/testing/validation-results.md).
+
+## Limitations (please read)
+- **Not deployed.** No live demo. The Railway and Vercel deploy is still to do.
+- **No SMS.** Patients are told only through the live web page. There is no notification if the page is closed.
+- **Single API server.** Rate limits and login throttling are in memory; real-time uses one Socket.IO server with no Redis adapter.
+- **Booking is today only, and booked patients queue in order of arrival.** Slot time is informational; a booking does not guarantee a call at that time.
+- **Browser coverage is thin.** One scripted pass in Chromium. No Firefox, Safari, real phone, accessibility or slow-network testing. No end-to-end tests in CI.
+- **k6 and the auditor are not in CI yet.** They were run by hand.
+- **Auditor scope.** It checks that what the system recorded is internally consistent. It cannot know about a patient who walked away. "The integrity checks pass" is the claim, not "the system is proven correct".
+- **The ticket link is the patient's only credential.** Whoever has it can see and cancel that ticket. It is unguessable and expires 24 hours after the ticket finishes.
+- **English only.** Strings are in one catalog so Cebuano and Filipino can be added, but no translation exists.
+- **No real clinic has used this.** Real workflows and patient behaviour are unvalidated. In a pilot I would measure actual waits, no-show rate and how staff really use the screens.
 
 ## Architecture
-See [docs/tech/TRD-HLD.md](docs/tech/TRD-HLD.md) (diagram to be copied here).
+```
+Patient phone / TV / Staff browser (React + Vite)
+        |  HTTPS (JSON)              |  WebSocket (Socket.IO: "queue changed" hints only)
+        v                            v
+              NestJS API  ---- JWT auth, roles, default-deny guards
+                  |             per-request transaction sets app.tenant_id
+                  v
+        PostgreSQL 16 (row-level security, append-only queue_events,
+                       row locks, idempotency keys)
+```
+- Sockets carry no data. After a hint (or a reconnect) the client refetches the snapshot over HTTP, so authorization lives in one place.
+- Event log is the source of truth for ticket state; the ticket row is a rebuildable projection.
+- More: [docs/tech/TRD-HLD.md](docs/tech/TRD-HLD.md).
 
 ## Stack
-React + Vite + TypeScript, Tailwind, shadcn/ui · NestJS · Prisma · PostgreSQL 16 · Socket.IO · Zod · Jest, Testcontainers, k6 · Docker Compose, GitHub Actions
+React + Vite + TypeScript, Tailwind v4, shadcn/ui, TanStack Query, Zustand · NestJS · Prisma · PostgreSQL 16 · Socket.IO · Zod (shared schemas) · Jest, Testcontainers, k6 · Docker, GitHub Actions
 
-## Quick start
-_TBD — `docker compose up` once scaffolded._
+## Run it locally
+Needs Node 22, pnpm and Docker.
+
+```bash
+cp .env.example .env                      # local placeholders; set your own JWT_SECRET
+pnpm install
+docker compose up -d postgres             # Postgres 16 on host port 5434
+pnpm --filter @queueless/shared build
+pnpm --filter @queueless/api exec prisma generate
+# First time only: the superuser connection creates the owner role. OWNER_PASSWORD must match the
+# password inside MIGRATION_DATABASE_URL in your .env. Later runs need neither variable.
+PROVISION_DATABASE_URL=postgresql://postgres:postgres@localhost:5434/queueless OWNER_PASSWORD=<owner password> \
+  pnpm --filter @queueless/api db:setup   # creates roles, applies migrations
+DEMO_PASSWORD=<12+ chars> pnpm --filter @queueless/api seed:demo    # demo clinic, one admin, one staff, slots
+pnpm --filter @queueless/api dev          # API on :3000
+pnpm --filter @queueless/web dev          # web on :5173
+```
+Then open `http://localhost:5173/login` (accounts are printed by the seed command; the password is the one you set), `/c/demo-clinic` as a patient, and `/tv/demo-clinic/general` for the TV.
+
+**Honesty note:** these steps were assembled from the scripts and the deployment runbook and from how I run the project day to day. I have not run them from a clean checkout on a fresh machine, so a step may be missing.
+
+Checks: `pnpm lint`, `pnpm test`, `pnpm --filter @queueless/api test:int` (needs Docker), `pnpm --filter @queueless/api audit`. Load tests: [k6/README.md](k6/README.md).
 
 ## Design decisions
 - [ADR-001 Tenancy via RLS](docs/decisions/ADR-001-tenancy-via-rls.md)
@@ -39,31 +96,13 @@ _TBD — `docker compose up` once scaffolded._
 - [ADR-003 Row locking](docs/decisions/ADR-003-concurrency-locking.md)
 - [ADR-004 Idempotency keys](docs/decisions/ADR-004-idempotency-keys.md)
 - [ADR-005 No Redis in MVP](docs/decisions/ADR-005-no-redis-in-mvp.md)
-- [All product decisions (D-1..D-31)](docs/product/decisions-log.md) · [Docs changelog](docs/CHANGELOG.md)
-
-## Validation
-| What | How | Result |
-|---|---|---|
-| No double-booking | k6: 200 concurrent requests, 1 slot | TBD |
-| No skipped/duplicate calls | 3 simultaneous call-next | TBD |
-| Crash recovery | API restarted mid-run | TBD |
-| Latency | k6 | TBD |
-| Integrity checks (A-1..A-8) | Auditor after k6 run | TBD |
-| Wait-time estimates | Simulated patients | TBD |
-| Usability | 5 testers, 3 tasks | TBD |
-
-Details: [docs/testing/validation-results.md](docs/testing/validation-results.md)
-
-**Not yet validated:** real clinic workflows and patient behavior.
-**In a pilot I would measure:** actual waits vs. estimates, no-show rate, SMS delivery rate.
+- [All product decisions](docs/product/decisions-log.md) · [Docs changelog](docs/CHANGELOG.md)
 
 ## Privacy
-Collects only a name/nickname and optional phone number, with logged consent. Never symptoms or diagnoses. Name and phone are cleared after 30 days. See [security-privacy](docs/tech/security-privacy.md).
+Collects only a name or nickname and an optional phone number, with logged consent. Never symptoms or diagnoses. A purge job (hourly, and at start) clears name and phone on tickets older than 30 days; it is tested by calling it directly, and the hourly timer has not been observed running in a live process. See [security-privacy](docs/tech/security-privacy.md).
 
-## Limitations
-- Single API instance (no Redis adapter yet)
-- No real clinic validation yet
-- SMS not implemented in MVP
+## Next
+Deploy, k6 and the auditor in CI, SMS with an outbox, wait-time estimates, a simulator and chaos tests, then a usability test. See [docs/STATUS.md](docs/STATUS.md).
 
 ## Docs
-Start at [docs/INDEX.md](docs/INDEX.md).
+Start at [docs/INDEX.md](docs/INDEX.md). Honest gap list: [docs/KNOWN-GAPS.md](docs/KNOWN-GAPS.md).
