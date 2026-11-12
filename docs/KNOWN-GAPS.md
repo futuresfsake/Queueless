@@ -6,7 +6,6 @@ Last updated: 2026-11-12. This is the honest list of what is missing, unverified
 | Gap | Impact | Plan |
 |---|---|---|
 | **Clinic Admin screen.** Service points, staff accounts and slots can only be created through the API (or `seed:demo`). | The demo cannot be set up from the UI. A reviewer needs the seeded demo clinic. | Draft exists (not in the repo, did not typecheck). Build after deploy if time allows. |
-| **Phone and name purge job** (INV-9, 30 days). | Auditor check A-7 passes only because no data is that old yet. The data-privacy promise is not enforced by code. | P1. Must exist before any real use. |
 | **`/admin/audit` endpoint and UI.** | The auditor is a CLI only. | Cut rule in `invariant-auditor.md`. |
 | **SMS** (two-way, outbox, Redis, BullMQ). | Patients are only notified through the live web page. | Post-MVP (ADR-005). |
 | **Booking is today-only**, and booked patients queue FIFO (D-10). Slot time is informational. | A booking does not guarantee a call at that time. | Post-MVP. |
@@ -16,6 +15,7 @@ Last updated: 2026-11-12. This is the honest list of what is missing, unverified
 ## Not verified
 | Gap | Detail |
 |---|---|
+| **Purge timer has not run in a live process.** | `PurgeService` (30-day clearing of name and phone, INV-9) is tested by calling it directly (T-18) and is registered in the app, but the hourly timer is off under test and was not observed running. |
 | **No browser check of any web page.** | Pages typecheck and build, and the API calls behind them were exercised with scripts. Layout, mobile view, the Space shortcut, the reconnect banner and the TV screen have not been looked at. No Playwright tests yet. |
 | **Not deployed.** | The Railway and Vercel first deploy (F6 gate) is still waiting on accounts. Nothing here has run in production. |
 | **k6 and the auditor are not in CI.** | They were run by hand on one laptop. CI runs Jest and Testcontainers only. |

@@ -12,6 +12,7 @@ import { TenantsService } from './tenants/tenants.service';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
 import { QueueModule } from './queue/queue.module';
+import { PurgeService } from './privacy/purge.service';
 import { PublicModule } from './public/public.module';
 import { SlotsController } from './slots/slots.controller';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -21,6 +22,7 @@ import { RealtimeModule } from './realtime/realtime.module';
   controllers: [HealthController, TenantsController, UsersController, ServicePointsController, SlotsController],
   providers: [
     EchoGateway,
+    PurgeService,
     TenantsService,
     UsersService,
     ServicePointsService,
