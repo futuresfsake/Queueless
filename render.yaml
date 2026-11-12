@@ -1,0 +1,24 @@
+# Free deploy: one Render web service (Docker) serving the API and the built web app, plus Neon Postgres.
+# Step-by-step: docs/ops/deployment-runbook.md ("Free deploy: Render + Neon").
+services:
+  - type: web
+    name: queueless
+    runtime: docker
+    plan: free
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: TRUST_PROXY
+        value: "1"
+      - key: CLINIC_TZ
+        value: Asia/Manila
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_DB_PASSWORD
+        generateValue: true
+      # Set in the Render dashboard (never commit): Neon connection strings.
+      - key: MIGRATION_DATABASE_URL   # Neon default owner role, DIRECT (non-pooled) host
+        sync: false
+      - key: DATABASE_URL             # queueless_app role, same host and database, password = APP_DB_PASSWORD
+        sync: false

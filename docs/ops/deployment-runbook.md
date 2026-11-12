@@ -57,6 +57,25 @@ ALTER ROLE queueless_app PASSWORD '<from secret store>';
 ```
 On a managed Postgres confirm during the M0 F6 hello-world deploy that (a) the migration role can `CREATE ROLE`, and (b) `SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user` for the **app** connection returns false/false. If the host forbids `CREATE ROLE`, create the role by hand once with an owner-run script and keep the migration's `IF NOT EXISTS` guard. After every deploy run the auditor CLI (check A-6 verifies this posture).
 
+## Free deploy: Render + Neon (single URL)
+
+Chosen 2026-11-12 (D-37): $0, no card. One Render web service runs the Docker image, which serves the API and the built web app from the same origin (`WEB_DIST`), so there is no Vercel and no CORS. Neon provides Postgres 16.
+
+**Known trade-offs.** Render free sleeps after 15 minutes without traffic and takes about a minute to wake. Add a free UptimeRobot monitor on `/api/v1/health` (5-minute interval) to keep it awake. Free tiers can change; check render.com/docs/free and neon.com before relying on exact limits.
+
+**Untested on Neon until the first deploy.** Neon gives no superuser, so skip provisioning: do NOT set `PROVISION_DATABASE_URL`. The migrations run as Neon's default owner role (it can `CREATE ROLE`), and the API connects as the non-owner `queueless_app`. The A-6 guard still stops the container if that role could bypass RLS.
+
+### Steps
+1. Neon: create a project (Postgres 16). From **Connect**, copy the **direct** (not pooled) connection string for the default owner role. It looks like `postgresql://<owner>:<pw>@<host>/<db>?sslmode=require`.
+2. Render: New -> **Blueprint** -> pick the repo (reads `render.yaml`). Render generates `JWT_SECRET` and `APP_DB_PASSWORD`.
+3. In the service Environment, set:
+   - `MIGRATION_DATABASE_URL` = the Neon owner string from step 1
+   - `DATABASE_URL` = same string with user `queueless_app`, password = the generated `APP_DB_PASSWORD` value
+4. Deploy. Logs must show `applied: ...`, `app role password set`, `... (A-6 ok)`, `Serving web app from ...`, `API listening`.
+5. Seed from your laptop (see "Seeding the Super Admin in production" above, using the Neon `queueless_app` string), then `pnpm --filter @queueless/api seed:demo` the same way.
+6. Open `https://<service>.onrender.com`, check `/api/v1/health`, join the demo clinic, call next from `/staff`, watch `/tv/demo-clinic/general`. Refresh a `/t/<token>` page to confirm the SPA fallback.
+7. UptimeRobot: HTTP monitor on `https://<service>.onrender.com/api/v1/health`, 5-minute interval.
+
 ## First deploy (M0 F6) — Railway (API + Postgres) and Vercel (web)
 
 Updated 2026-11-06. Everything below was rehearsed locally: the exact Docker image was run against an empty database in production mode (provision -> migrate -> role-safety guard -> API, WebSocket echo, CORS for allowed vs other origins). Railway-specific steps (variable names, dashboard clicks) are the only untested part.
