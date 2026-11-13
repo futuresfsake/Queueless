@@ -9,7 +9,13 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
   constructor(databaseUrl: string | undefined = process.env.DATABASE_URL) {
-    super(databaseUrl ? { datasources: { db: { url: databaseUrl } } } : undefined);
+    // PRISMA_TX_TIMEOUT_MS lets one-off scripts (seeding a remote database over the internet) outlast
+    // Prisma's 5 s default. Unset, behaviour is unchanged.
+    const timeout = Number(process.env.PRISMA_TX_TIMEOUT_MS);
+    super({
+      ...(databaseUrl ? { datasources: { db: { url: databaseUrl } } } : {}),
+      ...(timeout > 0 ? { transactionOptions: { timeout, maxWait: timeout } } : {}),
+    });
   }
 
   async onModuleDestroy(): Promise<void> {
