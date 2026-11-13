@@ -16,7 +16,7 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 - F4 done: `TenantPrisma`, `Clock`, `/health` DB check; Testcontainers harness; integration tests T-1, T-2, T-3, T-12, T-19 plus an RLS-enabled-on-every-table check (13 tests). Verified they fail when the app connects as superuser. CI green on `051e78b` (including these integration tests on the runner).
 - F5 done: login (JWT 8 h), default-deny `AuthGuard`+`RolesGuard`, per-request user re-check, login throttle, tenants/users/service-points API, Super Admin seed script. Verified: 14 unit + 45 integration tests green; mutation-checked (breaking RolesGuard or the live-user check fails 6 tests); smoke-tested the real API in dev (`pnpm dev`) and the production build (`node dist/main.js`) against the local DB. Found and fixed: `tsx` cannot run NestJS DI (see conventions.md).
 
-- F6 prepared (not deployed): migration runner with A-6 safety guard, Dockerfile (non-root) + `railway.toml`, Socket.IO echo gateway, web hello page (API health + WebSocket check), `vercel.json`, CI builds the image, runbook "First deploy". Rehearsed: image built and run in production mode against an empty DB (provision, migrate, guard, health, WebSocket echo, CORS allow/deny); guard verified to stop the container when `DATABASE_URL` is the owner.
+- F6 prepared locally, later deployed on Render + Neon instead (D-37; the Railway and Vercel plan was not used): migration runner with A-6 safety guard, Dockerfile (non-root) + `railway.toml`, Socket.IO echo gateway, web hello page (API health + WebSocket check), `vercel.json`, CI builds the image, runbook "First deploy". Rehearsed: image built and run in production mode against an empty DB (provision, migrate, guard, health, WebSocket echo, CORS allow/deny); guard verified to stop the container when `DATABASE_URL` is the owner.
 
 - M1 queue core (API): issue ticket (staff walk-in), `call-next` (`FOR UPDATE SKIP LOCKED`), start/complete/no-show/skip/cancel, append-only events, idempotency (service inside the request transaction), staff queue view. State machine is pure data (`ticket-state-machine.ts`) with a table-driven unit test. Raw SQL is in `apps/api/src/db/sql/queue.sql.ts`. Verified: lint, build, 18 unit and 81 integration tests green (34 new in `queue.int.spec.ts`). Mutation-checked: removing `SKIP LOCKED` (caught only by the deterministic lock-overlap test, not by the parallel-HTTP test), the status guard, or the idempotency claim each fails tests. Not yet committed.
 
@@ -35,8 +35,11 @@ See [KNOWN-GAPS.md](KNOWN-GAPS.md) for what is not built, not verified, or weake
 4. Rotate the demo password if the repo becomes public and the demo is abused (re-run `seed:demo` with a new `DEMO_PASSWORD`).
 
 ## Verified 2026-11-13
-- 18 unit and 115 integration tests pass locally; lint clean. CI passed on `3583223`.
-- Live on Render + Neon (PostgreSQL 18): health ok with db up, web app and deep links served, 401 without a token, demo seeded, staff login works, TV board endpoint answers. Not yet checked live: a full click-through, k6, the auditor, the purge timer.
+- 19 unit and 115 integration tests pass on the final code (`8d0f056`); lint and build clean; Semgrep clean on the files changed today. Dependency audit: 12 known findings (1 high in `zod`, 10 moderate, 1 low), all in existing dependencies and not touched before the deadline.
+- Live on Render + Neon (PostgreSQL 18): health ok with db up, web app and deep links served, 401 without a token, demo seeded, staff login works, TV board endpoint answers, `/api/v1/health/live` answers without a database query (D-38).
+- Scripted Chrome pass on the live site: join x3, staff sign-in, Call next, TV, patient ticket and admin pages (README screenshots). A first screenshot attempt captured the screens before the call finished and was retaken.
+- Auditor against the deployed database: A-1..A-5, A-7, A-8 pass; A-6 shows FAIL only when run as the Neon owner role. The app role was checked in the catalog instead (see KNOWN-GAPS).
+- Not checked live: k6, purge timer, real phones, uptime monitor (to be created by hand).
 - Deploy findings (runbook): the Render-generated `APP_DB_PASSWORD` is base64 and breaks the URL, so set your own letters-and-digits value; the first-deploy log hides app errors unless `migrate.ts` prints them (fixed in `2dace89`); seeding over the internet needs `PRISMA_TX_TIMEOUT_MS`.
 
 ## Blockers

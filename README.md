@@ -58,7 +58,7 @@ Taken from the live demo on 2026-11-13 with made-up patients ("Demo Patient 1..3
 - **Roles:** Super Admin, Clinic Admin, Staff, and guest Patient (by private ticket link).
 
 ## Results (measured, with conditions)
-Where and how these were measured: one developer laptop (Windows 11), API in dev mode on the same machine, PostgreSQL 16 in Docker on the same machine, k6 in Docker, one client IP, a small data set, and the per-IP rate limit raised for the race test. These show correctness under concurrency; they are **not** a production capacity claim. Not run in CI, not run against a deployed instance. Date: 2026-11-12.
+Where and how these were measured: one developer laptop (Windows 11), API in dev mode on the same machine, PostgreSQL 16 in Docker on the same machine, k6 in Docker, one client IP, a small data set, and the per-IP rate limit raised for the race test. These show correctness under concurrency; they are **not** a production capacity claim. The k6 runs were not run in CI and not run against the deployed instance. Date: 2026-11-12.
 
 | What | How | Result |
 |---|---|---|
@@ -66,8 +66,9 @@ Where and how these were measured: one developer laptop (Windows 11), API in dev
 | No duplicate or skipped calls | k6: 3 desks calling 90 tickets at once | 90 distinct tickets, none left waiting, 0 errors |
 | Call-next latency | same run | p95 20.9 ms, median 16.7 ms, max 26.7 ms (90 calls, light load) |
 | Integrity checks A-1..A-8 | auditor after the k6 runs | all pass; each check also proven to fail on corrupted data |
-| Automated tests | Jest unit + Testcontainers integration (real Postgres) | 18 unit and 112 integration tests pass locally; CI passed on the last checked commit |
+| Automated tests | Jest unit + Testcontainers integration (real Postgres) | 19 unit and 115 integration tests pass locally (2026-11-13); CI runs them on every push |
 | Browser behaviour | one scripted headless-Chromium pass (not in the repo) | 17 of 17 checks: login, join, live updates, Space to call, reconnect banner after stopping and restarting the API, admin create |
+| Integrity checks on the deployed demo | auditor against the live Neon database, 2026-11-13 | A-1..A-5, A-7, A-8 pass on a tiny data set (3 tickets); the app database role was checked separately (not superuser, no RLS bypass, no tables owned, `queue_events` insert and select only) |
 | Crash recovery under load | API restarted mid-run | **not measured** |
 | Wait-time estimates, simulated day | simulator | **not built** |
 | Usability | 5 testers | **not done** |

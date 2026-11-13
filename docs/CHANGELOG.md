@@ -2,6 +2,14 @@
 
 Docs are edited only with a dated entry here (or a new ADR).
 
+## v1.3 — 2026-11-13 — Deployed
+The demo is live on Render + Neon (D-37). Docs updated to match what was built and deployed:
+- `decisions-log.md`: D-4 marked superseded by D-37; new D-38 (monitor `/health/live`), D-39 (published demo accounts), D-40 (Render database password).
+- `deployment-runbook.md`: deploy corrections, uptime-monitor section, Railway + Vercel section marked superseded and unused.
+- `TRD-HLD.md`: hosting row.
+- `KNOWN-GAPS.md`, `STATUS.md`, `README.md`: live link, shared demo accounts, what was and was not checked on the live site, screenshots.
+- `implementation-plan.md` and `milestones.md` still list Railway and Vercel tasks; they are the historical plan and were not rewritten.
+
 ## v1.2.1 — 2026-11-10 — M1 implementation notes
 No product decisions changed. Docs updated to match the built code:
 - `api.md`: M1 endpoints, `CONSENT_REQUIRED` behaviour, idempotency key limits and request hash. `POST /tickets/:id/:action` takes no service-point header (the ticket id identifies it).

@@ -14,7 +14,7 @@ Status: Final v1.1 · Last updated: 2026-11-05
 | Validation | Zod in `packages/shared` | Shared by API and web |
 | Tests | Jest, Testcontainers, k6 | Playwright later |
 | DevOps | Docker Compose, GitHub Actions | |
-| Hosting | Railway/Render (API+DB), Vercel (web) | Free/cheap tiers |
+| Hosting | Deployed: Render (one Docker service, API + built web app) + Neon (PostgreSQL), free tiers (D-37). Originally planned: Railway + Vercel | Free tiers |
 | Logs | Pino, `/health` | Sentry post-MVP |
 
 Post-MVP: Redis, BullMQ, `@socket.io/redis-adapter`, SMS gateway, Python/pandas, Toxiproxy.

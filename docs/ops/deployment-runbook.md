@@ -85,9 +85,11 @@ On 2026-11-13 the production image was run against a fresh throwaway Postgres 16
 4. Deploy. Logs must show `applied: ...`, `app role password set`, `... (A-6 ok)`, `Serving web app from ...`, `API listening`.
 5. Seed from your laptop (see "Seeding the Super Admin in production" above, using the Neon `queueless_app` string), then `pnpm --filter @queueless/api seed:demo` the same way.
 6. Open `https://<service>.onrender.com`, check `/api/v1/health`, join the demo clinic, call next from `/staff`, watch `/tv/demo-clinic/general`. Refresh a `/t/<token>` page to confirm the SPA fallback.
-7. UptimeRobot: HTTP monitor on `https://<service>.onrender.com/api/v1/health`, 5-minute interval.
+7. Uptime monitor (UptimeRobot free: 5-minute interval, or Better Stack free: about 3 minutes; verify on their pricing pages): HTTP monitor on **`https://<service>.onrender.com/api/v1/health/live`**, not `/health`. `/health` runs `SELECT 1`, so pinging it every few minutes keeps Neon's scale-to-zero database awake all month and would use up Neon's free compute hours (about 100 CU-hours a month on the free plan; confirm on neon.com). `/health/live` only proves the web process is up, which is all that keeps Render awake. Use `/health` by hand or for a rare check that the database is reachable. Render's free instance hours also cap how long a service can stay awake in a month; confirm the allowance covers one always-on service, and pause the monitor after the interviews (Dec 1-7).
 
 ## First deploy (M0 F6) — Railway (API + Postgres) and Vercel (web)
+
+> **Superseded by D-37 (2026-11-12) and not used.** The live demo runs on Render + Neon (section above). This Railway + Vercel section is kept as an unused alternative and was never executed against real Railway or Vercel accounts.
 
 Updated 2026-11-06. Everything below was rehearsed locally: the exact Docker image was run against an empty database in production mode (provision -> migrate -> role-safety guard -> API, WebSocket echo, CORS for allowed vs other origins). Railway-specific steps (variable names, dashboard clicks) are the only untested part.
 
