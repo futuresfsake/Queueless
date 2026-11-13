@@ -19,7 +19,7 @@ First run on a brand-new local database: set `PROVISION_DATABASE_URL=postgresql:
 | `MIGRATION_DATABASE_URL` | Connection as `queueless_owner` — used only by `migrate.js` |
 | `APP_DB_PASSWORD` | Set on `queueless_app` by `migrate.js` on each deploy |
 | `PROVISION_DATABASE_URL`, `OWNER_PASSWORD` | First deploy only: superuser connection and the owner role password (remove the URL afterwards) |
-| `TRUST_PROXY` | `1` behind Railway so per-IP limits see the client |
+| `TRUST_PROXY` | `1` behind Railway or Render (`render.yaml` sets it) so per-IP limits see the client. It also makes `req.secure` true behind the TLS-terminating host, which is the only time the API sends the `Strict-Transport-Security` header (HSTS, set in `configure-app.ts`). Without it the header is never sent. The host does the http to https redirect. |
 | `JWT_SECRET` | JWT signing |
 | `CORS_ORIGINS` | Allowed web origins |
 | `PORT` | API port |
