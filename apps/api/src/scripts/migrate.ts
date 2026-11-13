@@ -38,7 +38,15 @@ async function main() {
   console.log('DATABASE_URL role is non-owner, non-superuser, cannot bypass RLS (A-6 ok)');
 }
 
+/** Connection failures can be an AggregateError with an empty message; print each cause so deploy logs say why. */
+function describe(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const inner = err instanceof AggregateError ? err.errors.map((e) => describe(e)).join('; ') : '';
+  const code = (err as { code?: string }).code;
+  return [err.message, code, inner].filter(Boolean).join(' | ') || err.name;
+}
+
 main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
+  console.error(`migrate failed: ${describe(err)}`);
   process.exit(1);
 });
