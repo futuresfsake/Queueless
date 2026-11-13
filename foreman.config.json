@@ -1,0 +1,9 @@
+{
+  "ignore": [
+    {
+      "ruleId": "config/no-rate-limit-auth",
+      "file": "apps/api/src/auth/auth.controller.ts",
+      "reason": "Login is rate limited in AuthService.login through LoginThrottle (per email and per IP, D-28, US-36), covered by login-throttle.service.spec.ts. The scanner cannot follow the call from the controller into the service."
+    }
+  ]
+}
