@@ -13,6 +13,13 @@ describe('HealthController', () => {
     expect(res.status).toBe('degraded');
   });
 
+  it('live check answers without touching the database', () => {
+    const query = jest.fn();
+    const res = new HealthController(prismaWith(query)).live();
+    expect(res.status).toBe('ok');
+    expect(query).not.toHaveBeenCalled();
+  });
+
   it('US-22 / T-19: reports ok when the database answers', async () => {
     const res = await new HealthController(prismaWith(() => Promise.resolve([{ '?column?': 1 }]))).check();
     expect(res.db).toBe('up');
