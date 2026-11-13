@@ -22,6 +22,29 @@ These are **shared demo accounts** for a clinic called "Demo Health Center". All
 
 <!-- CI badge and demo GIF go here once they exist. -->
 
+## Screenshots
+Taken from the live demo on 2026-11-13 with made-up patients ("Demo Patient 1..3"). One patient was called with **Call next**, so the staff screen, the TV and the patient's phone all show the same state.
+
+**Home page**
+
+![Home page](docs/screenshots/home.png)
+
+**Staff screen:** G-001 is at the desk, two people are waiting
+
+![Staff queue screen](docs/screenshots/staff.png)
+
+**TV display (numbers only, never names)**
+
+![TV display showing G-001 now serving](docs/screenshots/tv.png)
+
+**Patient on a phone: join, then the live ticket**
+
+<img src="docs/screenshots/join.png" alt="Patient join page on a phone" width="260"> <img src="docs/screenshots/ticket-waiting.png" alt="Ticket while waiting" width="260"> <img src="docs/screenshots/ticket-called.png" alt="Ticket after being called" width="260">
+
+**Clinic Admin setup**
+
+![Clinic admin setup](docs/screenshots/admin.png)
+
 ## What works today
 - **Multi-tenant** data isolation with PostgreSQL row-level security (the API connects as a non-owner role). Tests check that one clinic cannot read or change another's data.
 - **Staff queue screen** (`/staff`): waiting, called and serving lists, **Call next** (button or Space), start, complete, no-show, skip, cancel, walk-in registration with consent. Updates live.
