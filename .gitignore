@@ -9,3 +9,6 @@ coverage
 # Neon local context and pulled connection strings (never commit)
 .neon
 .env.neon
+
+# Foreman Solo local scan history
+.foreman
