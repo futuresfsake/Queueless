@@ -17,7 +17,7 @@ Last updated: 2026-11-12. This is the honest list of what is missing, unverified
 | **Purge timer has not run in a live process.** | `PurgeService` (30-day clearing of name and phone, INV-9) is tested by calling it directly (T-18) and is registered in the app, but the hourly timer is off under test and was not observed running. |
 | **Browser coverage is one scripted pass, not a test suite.** | On 2026-11-12 a headless Chromium script (Playwright, run by hand, not in the repo or CI) drove the real stack and passed 17 of 17 checks: login and route guard, join and book flow on a 390 px phone width (no horizontal scroll), live updates to staff, patient and TV, Space to call next, start and complete, reconnect banner when the API server is stopped and again when it returns, admin creating a service point, STAFF kept out of `/admin`. It found one real bug (an invalid `pattern` regex on the admin form, fixed). **Not covered:** Firefox and Safari, real phones, slow networks, dark mode, accessibility audit, the slot booking button and the staff-account form in the browser, the TV on a real screen, visual design review. No E2E tests in CI yet. |
 | **README quick start never run from a clean checkout.** | Written from the scripts and runbook; a step may be missing (the one-time role provisioning was added after review). |
-| **Not deployed.** | The Railway and Vercel first deploy (F6 gate) is still waiting on accounts. Nothing here has run in production. |
+| **Deployed as a free-tier demo, lightly checked.** | Live on Render + Neon since 2026-11-13 (PostgreSQL 18 on Neon; tests and the rehearsal ran on 16). Checked by hand: health, web app and deep links, 401 without a token, staff login, TV board endpoint. **Not checked on the live site:** a full join, call-next and TV click-through, k6, the auditor, the purge timer, and behaviour after a cold start under real use. The instance sleeps when idle. |
 | **k6 and the auditor are not in CI.** | They were run by hand on one laptop. CI runs Jest and Testcontainers only. |
 | **Performance numbers are local.** | Laptop, API in dev mode, Postgres in Docker on the same machine, one client, small data set, rate limit lifted for the race test. They show correctness under concurrency, not production capacity. |
 | **Reconnect after a real network drop** was not tested end to end. | Only the code path (refetch on socket connect) exists. |
@@ -44,7 +44,7 @@ Last updated: 2026-11-12. This is the honest list of what is missing, unverified
 - **Auditor checks consistency, not truth.** It cannot know about a patient who walked away (see `invariant-auditor.md`). Its default window is 7 days.
 - **The auditor's read-only guarantee is by construction** (SELECT-only SQL), not enforced by a read-only transaction.
 - **Staff JWT is stored in `localStorage`.** Standard for this kind of app but exposed to any XSS; there is no refresh-token flow (8 hour token).
-- **Demo accounts** use a password from the environment and are shared out of band; none are in the repo.
+- **Demo accounts are shared and their password is published in the README (decision 2026-11-13).** The demo clinic holds only made-up data, but anyone can sign in, including as Clinic Admin, and change it. Re-run `seed:demo` with a new `DEMO_PASSWORD` to rotate it. Never reuse this password anywhere else.
 
 ## Housekeeping
 - Git history was rewritten on 2026-11-12 to remove tool attribution from commits; a local backup branch `backup-before-rewrite` still holds the old history.

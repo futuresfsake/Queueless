@@ -4,9 +4,23 @@
 
 A multi-tenant, real-time queue and appointment system for clinics and barangay health centers in the Philippines. A portfolio project, built by one person. The focus is correctness under concurrency, and being honest about what has and has not been proven.
 
-**Status (2026-11-12):** the MVP is built and tested locally; it is **not deployed yet**, and there is no live demo link. Everything in the results table below was measured on a developer laptop. What is missing or unverified is listed in [docs/KNOWN-GAPS.md](docs/KNOWN-GAPS.md); please read it before judging the project.
+**Status (2026-11-13):** the MVP is built, tested, and deployed as a free-tier demo (link below). Everything in the results table below was measured on a developer laptop, not on the deployed demo. What is missing or unverified is listed in [docs/KNOWN-GAPS.md](docs/KNOWN-GAPS.md); please read it before judging the project.
 
-<!-- CI badge, live demo link and demo GIF go here once they exist. None exist yet. -->
+## Try it live
+**https://queueless-x2wz.onrender.com**
+
+The demo runs on free tiers (Render for the app, Neon for PostgreSQL). **If nobody has used it for a while it sleeps, so the first load can take about a minute.**
+
+| Who | Where | Login |
+|---|---|---|
+| Patient (no account) | [Join or book a place](https://queueless-x2wz.onrender.com/c/demo-clinic) | none |
+| TV display | [General Consult board](https://queueless-x2wz.onrender.com/tv/demo-clinic/general) | none |
+| Staff | [Sign in](https://queueless-x2wz.onrender.com/login) | `staff@demo-clinic.example` / `EuUyRHWb6PEEwFRV` |
+| Clinic Admin | [Sign in](https://queueless-x2wz.onrender.com/login), then `/admin` | `admin@demo-clinic.example` / `EuUyRHWb6PEEwFRV` |
+
+These are **shared demo accounts** for a clinic called "Demo Health Center". All data in it is made up; please do not enter real names, phone numbers or health information. Anyone can use these accounts, so the data may be changed or reset at any time. A good first try: open the TV board in one tab, join the queue as a patient in a second, then sign in as staff in a third and press **Call next**.
+
+<!-- CI badge and demo GIF go here once they exist. -->
 
 ## What works today
 - **Multi-tenant** data isolation with PostgreSQL row-level security (the API connects as a non-owner role). Tests check that one clinic cannot read or change another's data.
@@ -38,7 +52,7 @@ Where and how these were measured: one developer laptop (Windows 11), API in dev
 Details and caveats: [docs/testing/validation-results.md](docs/testing/validation-results.md).
 
 ## Limitations (please read)
-- **Not deployed.** No live demo. The Railway and Vercel deploy is still to do.
+- **The live demo is a free-tier deployment.** It sleeps when idle (first load can take about a minute), runs one instance, and has had only a light manual check since it was deployed. The demo accounts are shared and their password is published here on purpose, so treat everything in the demo as public and fake.
 - **No SMS.** Patients are told only through the live web page. There is no notification if the page is closed.
 - **Single API server.** Rate limits and login throttling are in memory; real-time uses one Socket.IO server with no Redis adapter.
 - **Booking is today only, and booked patients queue in order of arrival.** Slot time is informational; a booking does not guarantee a call at that time.
@@ -102,7 +116,7 @@ Checks: `pnpm lint`, `pnpm test`, `pnpm --filter @queueless/api test:int` (needs
 Collects only a name or nickname and an optional phone number, with logged consent. Never symptoms or diagnoses. A purge job (hourly, and at start) clears name and phone on tickets older than 30 days; it is tested by calling it directly, and the hourly timer has not been observed running in a live process. See [security-privacy](docs/tech/security-privacy.md).
 
 ## Next
-Deploy, k6 and the auditor in CI, SMS with an outbox, wait-time estimates, a simulator and chaos tests, then a usability test. See [docs/STATUS.md](docs/STATUS.md).
+k6 and the auditor in CI and against the deployed demo, SMS with an outbox, wait-time estimates, a simulator and chaos tests, then a usability test. See [docs/STATUS.md](docs/STATUS.md).
 
 ## Docs
 Start at [docs/INDEX.md](docs/INDEX.md). Honest gap list: [docs/KNOWN-GAPS.md](docs/KNOWN-GAPS.md).

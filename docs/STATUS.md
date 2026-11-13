@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-12
+Last updated: 2026-11-13
 
 Update this at the end of every work session. Latest session log: [sessions/2026-11-05.md](sessions/2026-11-05.md) (uses the old milestone numbering; see mapping in [milestones](plan/milestones.md)).
 
@@ -8,7 +8,7 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 **Complete (v1.2).** Milestones restructured on 2026-11-06 so M0 is the foundation (see [CHANGELOG](CHANGELOG.md), D-32). All open questions are resolved in [decisions-log](product/decisions-log.md) (D-1..D-32). Edit a doc only with a dated change or a new ADR.
 
 ## Current milestone
-**M1 Queue core** — backend done and tested (see Done). M0 is **not fully closed**: F6 real deploy (Railway + Vercel) is still waiting on accounts. Note the plan dates are behind: the schedule said M1 on Nov 8, today is Nov 10, so M2 (real-time + staff UI), M3 and M4 (the proof) are all still ahead with 4 working days to the Nov 13 freeze.
+**Submit.** The MVP is built, tested, and live on Render + Neon (D-37) at https://queueless-x2wz.onrender.com since 2026-11-13. README has the link and the shared demo accounts. Left: a full click-through of the live site, an uptime ping, and the Nov 14 submission. Feature freeze is today (Nov 13, D-24).
 
 ## Done
 - F1: docs v1.1 + v1.2 restructure
@@ -29,14 +29,18 @@ Update this at the end of every work session. Latest session log: [sessions/2026
 See [KNOWN-GAPS.md](KNOWN-GAPS.md) for what is not built, not verified, or weaker than it looks.
 
 ## Next
-1. Commit M1 (not committed yet; ask-first rule) and push so CI runs the new integration tests
-2. M2: Socket.IO rooms with socket auth, emit **after commit** (events are written in the request transaction, so emitting from inside `applyTransition` would announce changes that could still roll back), shadcn/ui init, staff screen with Call next, login page
-3. M3 (public ticket page, TV, booking with `FOR UPDATE`, seed) then M4 (k6 + auditor): do not cut M4
-4. **You:** Railway + Vercel accounts and `docs/ops/deployment-runbook.md` "First deploy" (F6 gate is overdue; fallback in risks-and-cuts R4/R9)
+1. **You:** click through the live site (join, Call next, TV), add an UptimeRobot ping on `/api/v1/health` (5-minute interval), check Render's free monthly hours cover it.
+2. Seed `seed:super-admin` on production only if a Super Admin is needed (the demo does not need one).
+3. CI badge and a demo GIF in the README.
+4. Rotate the demo password if the repo becomes public and the demo is abused (re-run `seed:demo` with a new `DEMO_PASSWORD`).
+
+## Verified 2026-11-13
+- 18 unit and 115 integration tests pass locally; lint clean. CI passed on `3583223`.
+- Live on Render + Neon (PostgreSQL 18): health ok with db up, web app and deep links served, 401 without a token, demo seeded, staff login works, TV board endpoint answers. Not yet checked live: a full click-through, k6, the auditor, the purge timer.
+- Deploy findings (runbook): the Render-generated `APP_DB_PASSWORD` is base64 and breaks the URL, so set your own letters-and-digits value; the first-deploy log hides app errors unless `migrate.ts` prints them (fixed in `2dace89`); seeding over the internet needs `PRISMA_TX_TIMEOUT_MS`.
 
 ## Blockers
-- ~~Docker not running~~ — resolved 2026-11-06: Postgres 16 up on host port 5434; migrations applied locally.
-- Railway and Vercel accounts: not yet confirmed to exist.
+- None for submission.
 
 ## Decision gates
 - End of Nov 7 (hard stop Nov 8 morning): M0 F6 hello-world deploy with DB and WebSockets (D-4, D-32)
@@ -44,4 +48,4 @@ See [KNOWN-GAPS.md](KNOWN-GAPS.md) for what is not built, not verified, or weake
 - Nov 15: verify SMS gateway inbound (D-20)
 
 ## Days left to Nov 14
-4 to the Nov 13 freeze (Nov 10 to Nov 13); Nov 14 is submission only
+Today (Nov 13) is the feature freeze; Nov 14 is submission only

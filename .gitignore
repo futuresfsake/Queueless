@@ -6,4 +6,6 @@ coverage
 .DS_Store
 .vite
 
-WORKING-GUIDE.md
+# Neon local context and pulled connection strings (never commit)
+.neon
+.env.neon

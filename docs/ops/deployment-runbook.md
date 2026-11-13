@@ -63,7 +63,18 @@ Chosen 2026-11-12 (D-37): $0, no card. One Render web service runs the Docker im
 
 **Known trade-offs.** Render free sleeps after 15 minutes without traffic and takes about a minute to wake. Add a free UptimeRobot monitor on `/api/v1/health` (5-minute interval) to keep it awake. Free tiers can change; check render.com/docs/free and neon.com before relying on exact limits.
 
-**Untested on Neon until the first deploy.** Neon gives no superuser, so skip provisioning: do NOT set `PROVISION_DATABASE_URL`. The migrations run as Neon's default owner role (it can `CREATE ROLE`), and the API connects as the non-owner `queueless_app`. The A-6 guard still stops the container if that role could bypass RLS.
+**Rehearsed locally, not yet on real Neon.** Neon gives no superuser, so skip provisioning: do NOT set `PROVISION_DATABASE_URL`. The migrations run as Neon's default owner role (it can `CREATE ROLE`), and the API connects as the non-owner `queueless_app`. The A-6 guard still stops the container if that role could bypass RLS.
+
+On 2026-11-13 the production image was run against a fresh throwaway Postgres 16 whose owner was a plain non-superuser role with `CREATEROLE CREATEDB BYPASSRLS` (what Neon's default owner is believed to be; not checked against Neon itself). Result: migrations applied, `app role password set`, `A-6 ok`, web app served, `/api/v1/health` ok, deep link `/t/abc` returned the SPA, `/api/v1/tenants` without a token returned 401, `seed:demo` worked. Not covered: Neon's TLS and pooler behaviour, scale-to-zero wake-up, Render itself.
+
+**Deployed 2026-11-13 (D-37), with these corrections to the steps below:**
+- Do **not** keep the Render-generated `APP_DB_PASSWORD`. It is base64 and often contains `/`, `+` or `=`, which makes `DATABASE_URL` invalid (`migrate failed: Invalid URL | ERR_INVALID_URL`). Edit it to your own letters-and-digits value (24+ characters) and use the identical text as the password in `DATABASE_URL`.
+- `DATABASE_URL` is the Neon owner string with the username changed to `queueless_app` (spelled with two `u`s) and that password. `MIGRATION_DATABASE_URL` is the unpooled owner string, unchanged. Copy from the Neon console or a file such as `.env.neon`, never from the local `.env` (it holds `localhost:5434`).
+- Read failures in the service **Logs** tab, not Events. The first deploy fails at the safety check until `DATABASE_URL` is right.
+- To seed from a laptop over the internet, set `PRISMA_TX_TIMEOUT_MS=120000`; Prisma's 5 s transaction default is too short for the seed on a remote database.
+- The deployed app listens on the port Render sets (`PORT`, 10000), not 3000.
+
+**Use a fresh Neon database.** If `queueless_app` already exists and was created by a different role, the owner cannot change its password and the container exits with `permission denied to alter role` (seen when the rehearsal reused a Postgres cluster where another owner had created it).
 
 ### Steps
 1. Neon: create a project (Postgres 16). From **Connect**, copy the **direct** (not pooled) connection string for the default owner role. It looks like `postgresql://<owner>:<pw>@<host>/<db>?sslmode=require`.
